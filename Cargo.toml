@@ -1,0 +1,22 @@
+[package]
+name = "hed"
+version = "0.1.0"
+edition = "2021"
+authors = ["shixinhuang99 <shixinhuang99@gmail.com>"]
+description = "none"
+repository = "none"
+license = "MIT"
+include = [
+	"Cargo.toml",
+	"Cargo.lock",
+	"README.md",
+	"LICENSE",
+	"src/**",
+	".cargo",
+]
+
+[profile.release]
+strip = true
+lto = true
+panic = "abort"
+codegen-units = 1
