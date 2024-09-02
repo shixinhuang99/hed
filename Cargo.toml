@@ -3,17 +3,14 @@ name = "hed"
 version = "0.1.0"
 edition = "2021"
 authors = ["shixinhuang99 <shixinhuang99@gmail.com>"]
-description = "none"
-repository = "none"
+description = "hosts file editor"
+repository = "https://github.com/shixinhuang99/hed"
 license = "MIT"
-include = [
-	"Cargo.toml",
-	"Cargo.lock",
-	"README.md",
-	"LICENSE",
-	"src/**",
-	".cargo",
-]
+publish = false
+
+[workspace]
+members = ["crates/*"]
+resolve = "2"
 
 [profile.release]
 strip = true
