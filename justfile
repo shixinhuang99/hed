@@ -33,3 +33,6 @@ release-pr tag:
 push-tag tag:
 	git tag {{tag}}
 	git push origin {{tag}}
+
+test:
+	cargo test --workspace
