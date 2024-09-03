@@ -7,4 +7,5 @@ edition = "2021"
 doctest = false
 
 [dependencies]
-thiserror = "1.0.63"
+thiserror = { workspace = true }
+tokio = { workspace = true }
