@@ -1,14 +1,18 @@
 [package]
 name = "hed_core"
 version = "0.1.0"
-edition = "2021"
+edition.workspace = true
+publish.workspace = true
 
 [lib]
+doc = false
 doctest = false
 
 [dependencies]
+indexmap = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 
 [dev-dependencies]
-test-case = "3.3.1"
+insta = { workspace = true }
+test-case = { workspace = true }

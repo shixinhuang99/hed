@@ -1,6 +1,8 @@
-[package]
-name = "hed"
-version = "0.1.0"
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.package]
 edition = "2021"
 authors = ["shixinhuang99 <shixinhuang99@gmail.com>"]
 description = "hosts file editor"
@@ -8,15 +10,16 @@ repository = "https://github.com/shixinhuang99/hed"
 license = "MIT"
 publish = false
 
-[dependencies]
-anyhow = { workspace = true }
-
-[workspace]
-members = ["crates/*"]
-resolver = "2"
-
 [workspace.dependencies]
 anyhow = "1.0.86"
+eframe = { version = "0.28.1", default-features = false, features = [
+  "default_fonts",
+  "wgpu",
+] }
+hed_core = { path = "crates/hed_core" }
+indexmap = "2.5.0"
+insta = "1.39.0"
+test-case = "3.3.1"
 thiserror = "1.0.63"
 tokio = { version = "1.40.0", features = [
   "rt",
@@ -32,3 +35,7 @@ strip = true
 lto = true
 panic = "abort"
 codegen-units = 1
+
+[profile.dev.package]
+insta.opt-level = 3
+similar.opt-level = 3

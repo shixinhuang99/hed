@@ -1,0 +1,21 @@
+[package]
+name = "hed_gui"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+description.workspace = true
+repository.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "Hed"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = { workspace = true }
+eframe = { workspace = true }
+hed_core = { workspace = true }
+
+[features]
+_dev = []

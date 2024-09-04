@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use indexmap::IndexMap;
 use tokio::fs;
 
 use crate::{error::Result, ip_hosts::IpHosts};
@@ -7,7 +8,7 @@ use crate::{error::Result, ip_hosts::IpHosts};
 pub struct Hed {
 	pub hosts_path: PathBuf,
 	pub hosts_content: String,
-	pub ip_hosts_list: Vec<IpHosts>,
+	pub ip_hosts_map: IndexMap<String, IpHosts>,
 }
 
 impl Hed {
@@ -15,7 +16,7 @@ impl Hed {
 		Self {
 			hosts_path,
 			hosts_content: String::new(),
-			ip_hosts_list: vec![],
+			ip_hosts_map: IndexMap::new(),
 		}
 	}
 
@@ -23,15 +24,19 @@ impl Hed {
 		let content = fs::read_to_string(&self.hosts_path).await?;
 
 		self.hosts_content.clear();
-		self.ip_hosts_list.clear();
+		self.ip_hosts_map.clear();
 
 		for raw_line in content.lines() {
 			let line = raw_line.trim();
 			if line.starts_with('#') {
 				continue;
 			}
-			if let Ok(ip_host) = line.parse::<IpHosts>() {
-				self.ip_hosts_list.push(ip_host);
+			if let Ok(new_ih) = line.parse::<IpHosts>() {
+				if let Some(ih) = self.ip_hosts_map.get_mut(&new_ih.ip) {
+					ih.hosts.extend(new_ih.hosts);
+				} else {
+					self.ip_hosts_map.insert(new_ih.ip.clone(), new_ih);
+				}
 			}
 		}
 
