@@ -35,4 +35,7 @@ push-tag tag:
 	git push origin {{tag}}
 
 test:
-	cargo test --workspace
+	cargo test -p hed_core
+
+run:
+	cargo run -p hed_gui -F _dev

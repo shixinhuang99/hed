@@ -3,7 +3,7 @@ exclude = ["**/Cargo.lock"]
 
 [[rule]]
 include = ["**/Cargo.toml"]
-keys = ["dependencies", "*-dependencies"]
+keys = ["dependencies", "*-dependencies", "workspace.dependencies"]
 
 [rule.formatting]
 reorder_keys = true

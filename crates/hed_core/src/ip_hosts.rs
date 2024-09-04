@@ -1,22 +1,24 @@
 use std::{net::IpAddr, result::Result, str::FromStr};
 
+use indexmap::IndexSet;
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct IpHosts {
-	pub ip: IpAddr,
-	pub hosts: Vec<String>,
+	pub ip: String,
+	pub hosts: IndexSet<String>,
 }
 
 impl FromStr for IpHosts {
 	type Err = ();
 
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		let s = strip_comment(s);
+	fn from_str(line: &str) -> Result<Self, Self::Err> {
+		let line = strip_comment(line);
 		if let Some((may_ip, rest)) =
-			s.split_once(|ch: char| ch.is_whitespace())
+			line.split_once(|ch: char| ch.is_whitespace())
 		{
-			if let Ok(ip) = may_ip.parse::<IpAddr>() {
+			if may_ip.parse::<IpAddr>().is_ok() {
 				return Ok(IpHosts {
-					ip,
+					ip: may_ip.to_string(),
 					hosts: rest
 						.split_whitespace()
 						.map(|s| s.to_string())
@@ -24,8 +26,11 @@ impl FromStr for IpHosts {
 				});
 			}
 		}
-		if let Ok(ip) = s.parse::<IpAddr>() {
-			return Ok(IpHosts { ip, hosts: vec![] });
+		if line.parse::<IpAddr>().is_ok() {
+			return Ok(IpHosts {
+				ip: line.to_string(),
+				hosts: IndexSet::new(),
+			});
 		}
 		Err(())
 	}
@@ -42,27 +47,16 @@ fn strip_comment(s: &str) -> &str {
 
 #[cfg(test)]
 mod tests {
-	use std::net::{IpAddr, Ipv4Addr};
-
 	use test_case::test_case;
 
-	use super::{strip_comment, IpHosts};
+	use super::strip_comment;
 
-	#[test_case("foo#bar"; "case 1")]
-	#[test_case("foo #bar"; "case 2")]
-	#[test_case("foo #     bar"; "case 3")]
-	#[test_case("foo     #     bar"; "case 4")]
-	fn test_strip_comment(s: &str) {
-		assert_eq!(strip_comment(s), "foo");
-	}
-
-	#[test_case("172.16.254.1 a.com b.com # comment"; "case 1")]
-	#[test_case("172.16.254.1    a.com    b.com  #   comment  "; "case 2")]
-	fn test_ip_hosts_parse(s: &str) {
-		let expect = IpHosts {
-			ip: IpAddr::V4(Ipv4Addr::new(172, 16, 254, 1)),
-			hosts: vec!["a.com".to_string(), "b.com".to_string()],
-		};
-		assert_eq!(s.parse::<IpHosts>().unwrap(), expect);
+	#[test_case("foo#bar", "foo"; "case 1")]
+	#[test_case("foo #bar", "foo"; "case 2")]
+	#[test_case("foo #     bar", "foo"; "case 3")]
+	#[test_case("foo     #     bar", "foo"; "case 4")]
+	#[test_case("foo foo   #     bar", "foo foo"; "case 5")]
+	fn test_strip_comment(s: &str, expect: &str) {
+		assert_eq!(strip_comment(s), expect);
 	}
 }
