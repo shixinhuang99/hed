@@ -821,6 +821,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "hed_common"
+version = "0.1.0"
+
+[[package]]
 name = "hed_core"
 version = "0.1.0"
 dependencies = [
@@ -837,6 +841,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "eframe",
+ "hed_common",
  "hed_core",
 ]
 

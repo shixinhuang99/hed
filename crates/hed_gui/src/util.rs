@@ -1,28 +1,29 @@
-use std::{env, path::PathBuf};
+#[cfg(any(feature = "_dev", target_os = "windows"))]
+use std::env;
+use std::path::PathBuf;
 
 use anyhow::Result;
+#[cfg(any(feature = "_dev", target_os = "windows"))]
+use hed_common::PathExt;
 
-#[cfg(not(feature = "_dev"))]
+#[cfg(all(not(feature = "_dev"), target_os = "windows"))]
 pub fn get_sys_hosts_path() -> Result<PathBuf> {
 	let sys_drive = env::var("SYSTEMDRIVE")?;
-
-	let mut path = PathBuf::from(sys_drive);
-
-	path.push("Windows");
-	path.push("System32");
-	path.push("drivers");
-	path.push("etc");
-	path.push("hosts");
+	let path = PathBuf::from(sys_drive)
+		.join_as_components("Windows/System32/drivers/etc/hosts");
 
 	Ok(path)
 }
 
+#[cfg(all(not(feature = "_dev"), target_os = "macos"))]
+pub fn get_sys_hosts_path() -> Result<PathBuf> {
+	Ok(PathBuf::from("/etc/hosts"))
+}
+
 #[cfg(feature = "_dev")]
 pub fn get_sys_hosts_path() -> Result<PathBuf> {
-	let mut path = env::current_dir().unwrap();
-
-	path.push("tmp");
-	path.push("hosts");
+	let path =
+		env::current_dir()?.join_as_components("crates/hed_gui/tmp/hosts");
 
 	Ok(path)
 }

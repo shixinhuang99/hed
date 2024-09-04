@@ -15,6 +15,7 @@ path = "src/main.rs"
 [dependencies]
 anyhow = { workspace = true }
 eframe = { workspace = true }
+hed_common = { workspace = true }
 hed_core = { workspace = true }
 
 [features]

@@ -16,6 +16,7 @@ eframe = { version = "0.28.1", default-features = false, features = [
   "default_fonts",
   "wgpu",
 ] }
+hed_common = { path = "crates/hed_common" }
 hed_core = { path = "crates/hed_core" }
 indexmap = "2.5.0"
 insta = "1.39.0"

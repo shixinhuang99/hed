@@ -1,3 +1,4 @@
+use anyhow::Result;
 use eframe::egui;
 use hed_core::Hed;
 
@@ -8,11 +9,11 @@ pub struct App {
 }
 
 impl App {
-	pub fn new() -> Self {
-		let hosts_path = get_sys_hosts_path().unwrap();
+	pub fn new() -> Result<Self> {
+		let hosts_path = get_sys_hosts_path()?;
 		let hed = Hed::new(hosts_path);
 
-		Self { hed }
+		Ok(Self { hed })
 	}
 }
 
@@ -21,6 +22,7 @@ impl eframe::App for App {
 		egui::CentralPanel::default().show(ctx, |ui| {
 			ui.heading("My egui Application");
 			ui.label(format!("hosts path: {}", self.hed.hosts_path.display()));
+			let _ = ui.button("button");
 		});
 	}
 }

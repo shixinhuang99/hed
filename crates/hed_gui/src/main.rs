@@ -2,7 +2,7 @@ mod app;
 mod util;
 
 use anyhow::Result;
-use eframe::{egui::ViewportBuilder, run_native, NativeOptions};
+use eframe::{egui, egui_wgpu};
 
 use app::App;
 
@@ -13,12 +13,37 @@ fn main() {
 }
 
 fn run() -> Result<()> {
-	let options = NativeOptions {
-		viewport: ViewportBuilder::default().with_inner_size([800.0, 600.0]),
-		..NativeOptions::default()
-	};
-
-	run_native("Hed", options, Box::new(|_| Ok(Box::new(App::new()))))?;
+	eframe::run_native(
+		"Hed",
+		create_native_options(),
+		Box::new(|_| {
+			let app = App::new()?;
+			Ok(Box::new(app))
+		}),
+	)?;
 
 	Ok(())
+}
+
+fn create_native_options() -> eframe::NativeOptions {
+	eframe::NativeOptions {
+		viewport: create_viewport_builder(),
+		wgpu_options: create_wgpu_options(),
+		..Default::default()
+	}
+}
+
+fn create_viewport_builder() -> egui::ViewportBuilder {
+	const MIN_SIZE: [f32; 2] = [800.0, 600.0];
+
+	egui::ViewportBuilder::default()
+		.with_min_inner_size(MIN_SIZE)
+		.with_inner_size(MIN_SIZE)
+}
+
+fn create_wgpu_options() -> egui_wgpu::WgpuConfiguration {
+	egui_wgpu::WgpuConfiguration {
+		power_preference: egui_wgpu::wgpu::PowerPreference::LowPower,
+		..Default::default()
+	}
 }
