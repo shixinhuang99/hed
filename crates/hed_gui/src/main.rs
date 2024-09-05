@@ -1,3 +1,6 @@
+// https://doc.rust-lang.org/reference/runtime.html?highlight=windows_subsystem#the-windows_subsystem-attribute
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 mod app;
 mod util;
 
@@ -6,7 +9,8 @@ use eframe::{egui, egui_wgpu};
 
 use app::App;
 
-fn main() {
+#[tokio::main]
+async fn main() {
 	if let Err(err) = run() {
 		eprintln!("{}", err);
 	}
@@ -17,7 +21,10 @@ fn run() -> Result<()> {
 		"Hed",
 		create_native_options(),
 		Box::new(|_| {
-			let app = App::new()?;
+			let mut app = App::new()?;
+
+			app.init();
+
 			Ok(Box::new(app))
 		}),
 	)?;
@@ -29,6 +36,7 @@ fn create_native_options() -> eframe::NativeOptions {
 	eframe::NativeOptions {
 		viewport: create_viewport_builder(),
 		wgpu_options: create_wgpu_options(),
+		centered: true,
 		..Default::default()
 	}
 }

@@ -1,6 +1,7 @@
+pub mod channel;
 pub mod error;
 mod hed;
-mod ip_hosts;
+mod hosts_info;
 
 pub use hed::Hed;
-pub use ip_hosts::IpHosts;
+pub use hosts_info::HostsInfo;

@@ -843,6 +843,7 @@ dependencies = [
  "eframe",
  "hed_common",
  "hed_core",
+ "tokio",
 ]
 
 [[package]]
