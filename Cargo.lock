@@ -821,28 +821,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "hed_common"
-version = "0.1.0"
-
-[[package]]
-name = "hed_core"
-version = "0.1.0"
+name = "hed"
+version = "0.0.0"
 dependencies = [
+ "anyhow",
+ "eframe",
+ "egui",
  "indexmap",
  "insta",
  "test-case",
  "thiserror",
- "tokio",
-]
-
-[[package]]
-name = "hed_gui"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "eframe",
- "hed_common",
- "hed_core",
  "tokio",
 ]
 

@@ -1,26 +1,29 @@
+use std::path::PathBuf;
+
 use anyhow::Result;
 use eframe::egui;
-use hed_core::{
-	channel::{ChannelEvent, InvokeEvent},
-	Hed, HostsInfo,
+
+use crate::{
+	core::{HostsInfo, Invoke, Response, TaskHandler},
+	util::get_sys_hosts_path,
 };
 
-use crate::util::get_sys_hosts_path;
-
-pub struct App {
-	hed: Hed,
+pub struct Hed {
+	task_handler: TaskHandler,
+	hosts_path: PathBuf,
 	hosts_info: HostsInfo,
 	hosts_info_loading: bool,
 }
 
-impl App {
+impl Hed {
 	pub fn new() -> Result<Self> {
+		let task_handler = TaskHandler::new();
 		let hosts_path = get_sys_hosts_path()?;
-		let hed = Hed::new(hosts_path);
 		let hosts_info = HostsInfo::default();
 
 		Ok(Self {
-			hed,
+			task_handler,
+			hosts_path,
 			hosts_info,
 			hosts_info_loading: false,
 		})
@@ -30,28 +33,32 @@ impl App {
 		self.invoke_parse_hosts();
 	}
 
-	fn handle_channel_event(&mut self) {
-		if let Ok(event) = self.hed.rx.try_recv() {
-			match event {
-				ChannelEvent::Parse(hosts_info) => {
+	fn handle_task_response(&mut self) {
+		if let Ok(resp) = self.task_handler.rx.try_recv() {
+			match resp {
+				Response::Parse(hosts_info) => {
 					self.hosts_info = hosts_info;
 					self.hosts_info_loading = false;
+				}
+				Response::ParseFail => {
+					todo!();
 				}
 			}
 		}
 	}
 
 	fn invoke_parse_hosts(&mut self) {
-		self.hed.invoke(InvokeEvent::Parse);
+		self.task_handler
+			.invoke(Invoke::Parse(self.hosts_path.clone()));
 		self.hosts_info_loading = true;
 	}
 }
 
-impl eframe::App for App {
+impl eframe::App for Hed {
 	fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
 		egui::CentralPanel::default().show(ctx, |ui| {
 			ui.heading("Hed");
-			ui.label(format!("hosts path: {}", self.hed.hosts_path.display()));
+			ui.label(format!("hosts path: {}", self.hosts_path.display()));
 			if ui.button("parse").clicked() {
 				self.invoke_parse_hosts();
 			};
@@ -62,6 +69,6 @@ impl eframe::App for App {
 			}
 		});
 
-		self.handle_channel_event();
+		self.handle_task_response();
 	}
 }

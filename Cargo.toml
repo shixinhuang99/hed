@@ -1,8 +1,5 @@
-[workspace]
-members = ["crates/*"]
-resolver = "2"
-
-[workspace.package]
+[package]
+name = "hed"
 edition = "2021"
 authors = ["shixinhuang99 <shixinhuang99@gmail.com>"]
 description = "hosts file editor"
@@ -10,15 +7,17 @@ repository = "https://github.com/shixinhuang99/hed"
 license = "MIT"
 publish = false
 
-[workspace.dependencies]
+[[bin]]
+name = "Hed"
+path = "src/main.rs"
+
+[dependencies]
 anyhow = "1.0.86"
 eframe = { version = "0.28.1", default-features = false, features = [
   "default_fonts",
   "wgpu",
 ] }
 egui = "0.28.1"
-hed_common = { path = "crates/hed_common" }
-hed_core = { path = "crates/hed_core" }
 indexmap = "2.5.0"
 insta = "1.39.0"
 test-case = "3.3.1"
@@ -31,6 +30,9 @@ tokio = { version = "1.40.0", features = [
   "sync",
   "fs",
 ] }
+
+[features]
+_dev = []
 
 [profile.release]
 strip = true

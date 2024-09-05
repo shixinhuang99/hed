@@ -1,9 +1,8 @@
 use std::{net::IpAddr, path::PathBuf, str::FromStr};
 
+use anyhow::Result;
 use indexmap::{IndexMap, IndexSet};
 use tokio::fs;
-
-use crate::error::Result;
 
 #[derive(Default, Debug)]
 pub struct HostsInfo {
@@ -11,28 +10,31 @@ pub struct HostsInfo {
 	pub ip_hosts_map: IndexMap<String, IpHosts>,
 }
 
-pub async fn parse_hosts(hosts_path: PathBuf) -> Result<HostsInfo> {
-	let content = fs::read_to_string(hosts_path).await?;
+impl HostsInfo {
+	pub async fn parse_from_file(hosts_path: PathBuf) -> Result<Self> {
+		let content = fs::read_to_string(hosts_path).await?;
 
-	let mut parse_result = HostsInfo::default();
+		let mut parse_result = HostsInfo::default();
 
-	for raw_line in content.lines() {
-		let line = raw_line.trim();
-		if line.starts_with('#') {
-			continue;
-		}
-		if let Ok(new_ih) = line.parse::<IpHosts>() {
-			if let Some(ih) = parse_result.ip_hosts_map.get_mut(&new_ih.ip) {
-				ih.hosts.extend(new_ih.hosts);
-			} else {
-				parse_result.ip_hosts_map.insert(new_ih.ip.clone(), new_ih);
+		for raw_line in content.lines() {
+			let line = raw_line.trim();
+			if line.starts_with('#') {
+				continue;
+			}
+			if let Ok(new_ih) = line.parse::<IpHosts>() {
+				if let Some(ih) = parse_result.ip_hosts_map.get_mut(&new_ih.ip)
+				{
+					ih.hosts.extend(new_ih.hosts);
+				} else {
+					parse_result.ip_hosts_map.insert(new_ih.ip.clone(), new_ih);
+				}
 			}
 		}
+
+		parse_result.content = content;
+
+		Ok(parse_result)
 	}
-
-	parse_result.content = content;
-
-	Ok(parse_result)
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -85,7 +87,7 @@ mod tests {
 	use insta::assert_debug_snapshot;
 	use test_case::test_case;
 
-	use super::{parse_hosts, strip_comment};
+	use super::{strip_comment, HostsInfo};
 
 	#[test_case("foo#bar", "foo"; "case 1")]
 	#[test_case("foo #bar", "foo"; "case 2")]
@@ -99,8 +101,8 @@ mod tests {
 	#[tokio::test]
 	async fn test_hed_parse() {
 		let hosts_path = env::current_dir().unwrap().join("fixture/hosts");
-		let hosts_info = parse_hosts(hosts_path).await.unwrap();
+		let hosts_info = HostsInfo::parse_from_file(hosts_path).await.unwrap();
 
-		assert_debug_snapshot!("hosts_info", hosts_info);
+		assert_debug_snapshot!(hosts_info);
 	}
 }

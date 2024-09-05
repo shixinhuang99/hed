@@ -1,13 +1,17 @@
-// https://doc.rust-lang.org/reference/runtime.html?highlight=windows_subsystem#the-windows_subsystem-attribute
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod app;
+mod consts;
+mod core;
+mod hed;
 mod util;
 
 use anyhow::Result;
 use eframe::{egui, egui_wgpu};
 
-use app::App;
+use crate::{
+	consts::{APP_NAME, APP_TITLE},
+	hed::Hed,
+};
 
 #[tokio::main]
 async fn main() {
@@ -18,14 +22,14 @@ async fn main() {
 
 fn run() -> Result<()> {
 	eframe::run_native(
-		"Hed",
+		APP_NAME,
 		create_native_options(),
 		Box::new(|_| {
-			let mut app = App::new()?;
+			let mut hed = Hed::new()?;
 
-			app.init();
+			hed.init();
 
-			Ok(Box::new(app))
+			Ok(Box::new(hed))
 		}),
 	)?;
 
@@ -47,6 +51,8 @@ fn create_viewport_builder() -> egui::ViewportBuilder {
 	egui::ViewportBuilder::default()
 		.with_min_inner_size(MIN_SIZE)
 		.with_inner_size(MIN_SIZE)
+		.with_title(APP_TITLE)
+		.with_app_id(APP_NAME)
 }
 
 fn create_wgpu_options() -> egui_wgpu::WgpuConfiguration {
