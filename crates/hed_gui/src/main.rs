@@ -1,3 +1,6 @@
+// https://doc.rust-lang.org/reference/runtime.html?highlight=windows_subsystem#the-windows_subsystem-attribute
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 mod app;
 mod util;
 
@@ -29,6 +32,7 @@ fn create_native_options() -> eframe::NativeOptions {
 	eframe::NativeOptions {
 		viewport: create_viewport_builder(),
 		wgpu_options: create_wgpu_options(),
+		centered: true,
 		..Default::default()
 	}
 }
