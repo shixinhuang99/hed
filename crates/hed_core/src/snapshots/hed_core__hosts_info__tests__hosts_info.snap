@@ -1,0 +1,30 @@
+---
+source: crates/hed_core/src/hosts_info.rs
+assertion_line: 104
+expression: hosts_info
+---
+HostsInfo {
+    content: "# something else\n# something else\n# something else\n# something else\n# something else\n# something else\n# something else\n# something else\n               172.16.254.1     a.com         c.com   #          comment\n               \n      172.16.254.1     d.com         c.com\n      \n           2402:1200:4f00:1234:0000:5678:9abc:def0 b.com             \n\n# comment\n127.0.0.1 e.com\n",
+    ip_hosts_map: {
+        "172.16.254.1": IpHosts {
+            ip: "172.16.254.1",
+            hosts: {
+                "a.com",
+                "c.com",
+                "d.com",
+            },
+        },
+        "2402:1200:4f00:1234:0000:5678:9abc:def0": IpHosts {
+            ip: "2402:1200:4f00:1234:0000:5678:9abc:def0",
+            hosts: {
+                "b.com",
+            },
+        },
+        "127.0.0.1": IpHosts {
+            ip: "127.0.0.1",
+            hosts: {
+                "e.com",
+            },
+        },
+    },
+}

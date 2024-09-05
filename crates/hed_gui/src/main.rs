@@ -9,7 +9,8 @@ use eframe::{egui, egui_wgpu};
 
 use app::App;
 
-fn main() {
+#[tokio::main]
+async fn main() {
 	if let Err(err) = run() {
 		eprintln!("{}", err);
 	}
@@ -20,7 +21,10 @@ fn run() -> Result<()> {
 		"Hed",
 		create_native_options(),
 		Box::new(|_| {
-			let app = App::new()?;
+			let mut app = App::new()?;
+
+			app.init();
+
 			Ok(Box::new(app))
 		}),
 	)?;
