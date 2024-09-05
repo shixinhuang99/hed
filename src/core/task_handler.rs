@@ -3,9 +3,9 @@ use std::path::PathBuf;
 use anyhow::Result;
 use tokio::sync::mpsc::channel;
 
-use crate::core::{
+use super::{
 	channel::{Invoke, Receiver, Response, Sender},
-	hosts_info::HostsInfo,
+	HostsInfo,
 };
 
 pub struct TaskHandler {
@@ -30,10 +30,13 @@ impl TaskHandler {
 }
 
 async fn parse_hosts_task(tx: Sender, hosts_path: PathBuf) -> Result<()> {
-	if let Ok(hosts_info) = HostsInfo::parse_from_file(hosts_path).await {
-		tx.send(Response::Parse(hosts_info)).await?;
-	} else {
-		tx.send(Response::ParseFail).await?;
+	match HostsInfo::parse_from_file(hosts_path).await {
+		Ok(hosts_info) => {
+			tx.send(Response::Parse(hosts_info)).await?;
+		}
+		Err(err) => {
+			tx.send(Response::ParseFail(err.to_string())).await?;
+		}
 	}
 
 	Ok(())

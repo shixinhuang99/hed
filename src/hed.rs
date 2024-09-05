@@ -4,13 +4,14 @@ use anyhow::Result;
 use eframe::egui;
 
 use crate::{
-	core::{HostsInfo, Invoke, Response, TaskHandler},
+	core::{HostsInfo, Invoke, Profile, Response, TaskHandler},
 	util::get_sys_hosts_path,
 };
 
 pub struct Hed {
 	task_handler: TaskHandler,
 	hosts_path: PathBuf,
+	system_profile: Profile,
 	hosts_info: HostsInfo,
 	hosts_info_loading: bool,
 }
@@ -24,6 +25,7 @@ impl Hed {
 		Ok(Self {
 			task_handler,
 			hosts_path,
+			system_profile: Profile::new_system(),
 			hosts_info,
 			hosts_info_loading: false,
 		})
@@ -40,7 +42,8 @@ impl Hed {
 					self.hosts_info = hosts_info;
 					self.hosts_info_loading = false;
 				}
-				Response::ParseFail => {
+				Response::ParseFail(_) => {
+					self.hosts_info_loading = false;
 					todo!();
 				}
 			}
