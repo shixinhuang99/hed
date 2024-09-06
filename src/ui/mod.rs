@@ -1,3 +1,5 @@
+#[cfg(feature = "_dev")]
+pub mod dev_window;
 mod editor;
 mod editor_header;
 mod header;

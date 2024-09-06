@@ -1,6 +1,6 @@
 use crate::Hed;
 
-pub fn editor(_hed: &mut Hed, ctx: &egui::Context) {
+pub fn editor(ctx: &egui::Context, _hed: &mut Hed) {
 	egui::CentralPanel::default().show(ctx, |_ui| {
 		//
 	});

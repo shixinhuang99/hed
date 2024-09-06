@@ -11,6 +11,8 @@ use crate::{
 
 pub struct Hed {
 	task_handler: TaskHandler,
+	#[cfg(feature = "_dev")]
+	pub dev_window_open: bool,
 	pub hosts_path: PathBuf,
 	pub system_profile: Profile,
 	pub hosts_info: HostsInfo,
@@ -25,6 +27,8 @@ impl Hed {
 
 		Ok(Self {
 			task_handler,
+			#[cfg(feature = "_dev")]
+			dev_window_open: false,
 			hosts_path,
 			system_profile: Profile::new_system(),
 			hosts_info,
@@ -60,10 +64,10 @@ impl Hed {
 
 impl eframe::App for Hed {
 	fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-		header(self, ctx);
-		left_side(self, ctx);
-		editor_header(self, ctx);
-		editor(self, ctx);
+		header(ctx, self);
+		left_side(ctx, self);
+		editor_header(ctx, self);
+		editor(ctx, self);
 		self.handle_task_response();
 	}
 }
