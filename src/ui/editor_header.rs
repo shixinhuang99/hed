@@ -1,6 +1,6 @@
 use crate::Hed;
 
-pub fn editor_header(_hed: &mut Hed, ctx: &egui::Context) {
+pub fn editor_header(ctx: &egui::Context, _hed: &mut Hed) {
 	egui::TopBottomPanel::top("editor_header")
 		.exact_height(40.0)
 		.show(ctx, |_ui| {
