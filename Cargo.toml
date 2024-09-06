@@ -10,6 +10,11 @@ publish = false
 [[bin]]
 name = "Hed"
 path = "src/main.rs"
+test = false
+
+[lib]
+doc = false
+doctest = false
 
 [dependencies]
 anyhow = "1.0.86"

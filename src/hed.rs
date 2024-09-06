@@ -5,15 +5,16 @@ use eframe::egui;
 
 use crate::{
 	core::{HostsInfo, Invoke, Profile, Response, TaskHandler},
+	ui::{editor, editor_header, header, left_side},
 	util::get_sys_hosts_path,
 };
 
 pub struct Hed {
 	task_handler: TaskHandler,
-	hosts_path: PathBuf,
-	system_profile: Profile,
-	hosts_info: HostsInfo,
-	hosts_info_loading: bool,
+	pub hosts_path: PathBuf,
+	pub system_profile: Profile,
+	pub hosts_info: HostsInfo,
+	pub hosts_info_loading: bool,
 }
 
 impl Hed {
@@ -42,9 +43,9 @@ impl Hed {
 					self.hosts_info = hosts_info;
 					self.hosts_info_loading = false;
 				}
-				Response::ParseFail(_) => {
+				Response::ParseFail(err) => {
 					self.hosts_info_loading = false;
-					todo!();
+					eprintln!("{}", err);
 				}
 			}
 		}
@@ -59,19 +60,10 @@ impl Hed {
 
 impl eframe::App for Hed {
 	fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-		egui::CentralPanel::default().show(ctx, |ui| {
-			ui.heading("Hed");
-			ui.label(format!("hosts path: {}", self.hosts_path.display()));
-			if ui.button("parse").clicked() {
-				self.invoke_parse_hosts();
-			};
-			if self.hosts_info_loading {
-				ui.spinner();
-			} else {
-				ui.text_edit_multiline(&mut self.hosts_info.content);
-			}
-		});
-
+		header(self, ctx);
+		left_side(self, ctx);
+		editor_header(self, ctx);
+		editor(self, ctx);
 		self.handle_task_response();
 	}
 }

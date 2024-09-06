@@ -1,17 +1,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod consts;
-mod core;
-mod hed;
-mod util;
-
 use anyhow::Result;
 use eframe::{egui, egui_wgpu};
 
-use crate::{
-	consts::{APP_NAME, APP_TITLE},
-	hed::Hed,
-};
+use hed::{consts::APP_NAME, Hed};
 
 #[tokio::main]
 async fn main() {
@@ -46,13 +38,13 @@ fn create_native_options() -> eframe::NativeOptions {
 }
 
 fn create_viewport_builder() -> egui::ViewportBuilder {
-	const MIN_SIZE: [f32; 2] = [800.0, 600.0];
+	const MIN_SIZE: [f32; 2] = [900.0, 600.0];
+	const APP_TITLE: &str = "Hed";
 
 	egui::ViewportBuilder::default()
 		.with_min_inner_size(MIN_SIZE)
 		.with_inner_size(MIN_SIZE)
 		.with_title(APP_TITLE)
-		.with_app_id(APP_NAME)
 }
 
 fn create_wgpu_options() -> egui_wgpu::WgpuConfiguration {
