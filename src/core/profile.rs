@@ -7,7 +7,6 @@ pub struct Profile {
 	pub id: usize,
 	pub name: String,
 	pub hosts_info: HostsInfo,
-	pub deletable: bool,
 }
 
 impl Profile {
@@ -16,7 +15,6 @@ impl Profile {
 			id: GLOBAL_ID.next(),
 			name: name.to_string(),
 			hosts_info: HostsInfo::default(),
-			deletable: true,
 		}
 	}
 
@@ -25,7 +23,6 @@ impl Profile {
 			id: 1,
 			name: "System".to_string(),
 			hosts_info: HostsInfo::default(),
-			deletable: false,
 		}
 	}
 }

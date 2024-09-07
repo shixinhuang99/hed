@@ -1,79 +1,69 @@
-use egui::{
-	style::Widgets, Context, Frame, Label, Margin, RichText, ScrollArea,
-	SidePanel, TextStyle,
-};
+use egui::{Context, Frame, Margin, RichText, ScrollArea, SidePanel, TextEdit};
 
+use super::widgets::ProfileLabel;
 use crate::Hed;
 
-pub fn left_side(ctx: &Context, _hed: &mut Hed) {
+pub fn left_side(ctx: &Context, hed: &mut Hed) {
 	let ctx_style = &ctx.style();
-	let hovered_visuals = if ctx_style.visuals.dark_mode {
-		Widgets::dark().hovered
-	} else {
-		Widgets::light().hovered
-	};
-	let noninteractive_visuals = if ctx_style.visuals.dark_mode {
-		Widgets::dark().noninteractive
-	} else {
-		Widgets::light().noninteractive
-	};
-	let selection_visuals = ctx_style.visuals.selection;
 	SidePanel::left("left_side")
-		.exact_width(200.0)
-		.resizable(false)
+		.width_range(200.0..=400.0)
+		.resizable(true)
 		.frame(Frame::side_top_panel(ctx_style).inner_margin(Margin {
-			right: 2.0,
+			right: 4.0,
 			..Default::default()
 		}))
 		.show(ctx, |ui| {
 			let panel_width = ui.available_width();
+			Frame::none().inner_margin(4.0).show(ui, |ui| {
+				ui.set_height(30.0);
+				ui.add(
+					TextEdit::singleline(&mut hed.search_profile)
+						.desired_width(f32::INFINITY)
+						.font(egui::FontId::monospace(20.0))
+						.vertical_align(egui::Align::Center)
+						.hint_text("Search Profile"),
+				);
+			});
 			ScrollArea::vertical().show(ui, |ui| {
 				ui.set_width(panel_width);
-				for i in 0..100 {
-					let selected = i == 0;
+				for profile in &hed.profiles {
+					let selected = profile.id == hed.selected_profile_id;
+					let enalebd = profile.id == hed.enabled_profile_id;
 					Frame::none()
 						.inner_margin(Margin {
-							left: 2.0,
-							right: 1.0,
+							left: 3.0,
 							..Default::default()
 						})
 						.show(ui, |ui| {
-							ui.set_height(60.0);
-							let mut frame = Frame::none().begin(ui);
-							let content_ui = &mut frame.content_ui;
-							content_ui.set_height(ui.available_height());
-							content_ui.set_width(ui.available_width());
-							content_ui.horizontal_centered(|ui| {
-								ui.add_space(12.0);
-								ui.add(
-									Label::new(
-										RichText::new(format!("profile {}", i))
-											.size(20.0)
-											.text_style(TextStyle::Button)
-											.color(if selected {
-												hovered_visuals.text_color()
-											} else {
-												noninteractive_visuals
-													.text_color()
-											}),
-									)
-									.truncate(),
-								);
-							});
-							let resp = frame.allocate_space(ui);
-							if selected {
-								frame.frame.rounding = hovered_visuals.rounding;
-								frame.frame.fill = selection_visuals.bg_fill;
-								if resp.hovered() {
-									frame.frame.stroke =
-										selection_visuals.stroke;
-								}
-							} else if resp.hovered() {
-								frame.frame.rounding = hovered_visuals.rounding;
-								frame.frame.stroke = hovered_visuals.bg_stroke;
-								frame.frame.fill = hovered_visuals.weak_bg_fill;
+							ui.spacing_mut().button_padding.x = 20.0;
+							let resp = ui.add(ProfileLabel::new(
+								selected,
+								enalebd,
+								RichText::new(&profile.name).size(20.0),
+								60.0,
+							));
+							if resp.clicked() {
+								hed.selected_profile_id = profile.id;
 							}
-							frame.paint(ui);
+							resp.on_hover_ui(|ui| {
+								ui.style_mut().interaction.selectable_labels =
+									true;
+								let mut text = profile.name.to_string();
+								if enalebd {
+									text.push_str("\n(enabled)");
+								}
+								ui.label(text);
+							})
+							.context_menu(|ui| {
+								let spacing = ui.spacing_mut();
+								spacing.button_padding.y = 8.0;
+								if ui.button("Enable This Profile").clicked() {
+									ui.close_menu();
+								}
+								if ui.button("Delete").clicked() {
+									ui.close_menu();
+								}
+							});
 						});
 				}
 			});
