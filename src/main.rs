@@ -1,7 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use anyhow::Result;
-use eframe::{egui, egui_wgpu};
+use eframe::egui_wgpu;
 
 use hed::{consts::APP_NAME, Hed};
 
