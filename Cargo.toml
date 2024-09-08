@@ -27,14 +27,6 @@ indexmap = "2.5.0"
 insta = "1.39.0"
 test-case = "3.3.1"
 thiserror = "1.0.63"
-tokio = { version = "1.40.0", features = [
-  "rt",
-  "rt-multi-thread",
-  "time",
-  "macros",
-  "sync",
-  "fs",
-] }
 
 [features]
 _dev = []

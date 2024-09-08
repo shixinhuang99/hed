@@ -8,13 +8,13 @@ use crate::core::Hed;
 pub fn new_profile_window(ctx: &Context, ui: &mut Ui, hed: &mut Hed) {
 	let title = "⊞ New Profile";
 	if ui.selectable_label(true, title).clicked() {
-		hed.open_new_profile_window();
+		hed.new_profile_open = true;
 	}
 	if hed.new_pofile_ok {
 		hed.create_profile();
 	}
 	if ui.input(|i| i.key_pressed(Key::Escape)) {
-		hed.reset_new_profile_state();
+		hed.close_new_profile_window();
 	}
 	let window_resp = Window::new(title)
 		.id("new_profile".into())
@@ -81,6 +81,6 @@ pub fn new_profile_window(ctx: &Context, ui: &mut Ui, hed: &mut Hed) {
 			});
 		});
 	if window_resp.is_none() {
-		hed.reset_new_profile_state();
+		hed.close_new_profile_window();
 	}
 }

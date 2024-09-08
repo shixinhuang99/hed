@@ -1,16 +1,13 @@
-use egui::{Context, Frame, Margin, RichText, ScrollArea, SidePanel, TextEdit};
+use egui::{
+	Button, Context, Frame, Margin, RichText, ScrollArea, SidePanel, TextEdit,
+};
 
 use super::widgets::ProfileLabel;
-use crate::core::{Hed, Profile};
+use crate::core::Hed;
 
 pub fn left_side(ctx: &Context, hed: &mut Hed) {
 	let ctx_style = &ctx.style();
-	hed.check_deleted();
-	let display_profiles = hed
-		.profiles
-		.iter()
-		.filter(|p| p.name.contains(hed.search_profile.trim()))
-		.collect::<Vec<&Profile>>();
+	hed.check_profile_deleted();
 	SidePanel::left("left_side")
 		.width_range(200.0..=400.0)
 		.resizable(true)
@@ -32,7 +29,11 @@ pub fn left_side(ctx: &Context, hed: &mut Hed) {
 			});
 			ScrollArea::vertical().show(ui, |ui| {
 				ui.set_width(panel_width);
-				for profile in display_profiles {
+				for profile in hed
+					.profiles
+					.iter()
+					.filter(|p| p.name.contains(hed.search_profile.trim()))
+				{
 					let selected = profile.id == hed.selected_profile_id;
 					let enalebd = profile.id == hed.enabled_profile_id;
 					Frame::none()
@@ -61,15 +62,30 @@ pub fn left_side(ctx: &Context, hed: &mut Hed) {
 								ui.label(text);
 							})
 							.context_menu(|ui| {
-								let spacing = ui.spacing_mut();
-								spacing.button_padding.y = 8.0;
-								if ui.button("Enable This Profile").clicked() {
+								ui.spacing_mut().button_padding.y = 8.0;
+								if ui
+									.add_enabled(
+										profile.id != hed.enabled_profile_id,
+										Button::new("Enable This Profile"),
+									)
+									.clicked()
+								{
 									hed.enabled_profile_id = profile.id;
+									ui.close_menu();
 								}
-								if ui.button("Delete").clicked() {
+								if ui
+									.add_enabled(
+										hed.profiles.len() > 1
+											&& profile.id
+												!= hed.enabled_profile_id,
+										Button::new("Delete"),
+									)
+									.clicked()
+								{
 									hed.mark_deleted_profile_id =
 										Some(profile.id);
-								}
+									ui.close_menu();
+								};
 							});
 						});
 				}

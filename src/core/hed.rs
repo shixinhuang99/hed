@@ -2,7 +2,10 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 
-use super::{Invoke, Profile, Response, TaskHandler};
+use super::{
+	task_handler::{Invoke, Response, TaskHandler},
+	Profile,
+};
 use crate::util::get_sys_hosts_path;
 
 pub struct Hed {
@@ -47,13 +50,15 @@ impl Hed {
 	}
 
 	pub fn init(&mut self) {
-		self.invoke_parse_hosts();
+		self.parse_sys_hosts();
 	}
 
 	pub fn handle_task_response(&mut self) {
-		if let Ok(resp) = self.task_handler.rx.try_recv() {
+		use Response::*;
+
+		if let Some(resp) = self.task_handler.recv() {
 			match resp {
-				Response::Parse(hosts_info) => {
+				ParseHostsOk(hosts_info) => {
 					if let Some(profile) = self
 						.profiles
 						.iter_mut()
@@ -63,7 +68,7 @@ impl Hed {
 					}
 					self.profiles_loading = false;
 				}
-				Response::ParseFail(err) => {
+				ParseHostsFail(err) => {
 					self.profiles_loading = false;
 					eprintln!("{}", err);
 				}
@@ -71,15 +76,10 @@ impl Hed {
 		}
 	}
 
-	fn invoke_parse_hosts(&mut self) {
-		self.task_handler
-			.invoke(Invoke::Parse(self.sys_hosts_path.clone()));
+	fn parse_sys_hosts(&mut self) {
+		let path = self.sys_hosts_path.clone();
+		self.task_handler.invoke(Invoke::ParseHosts(path));
 		self.profiles_loading = true;
-	}
-
-	pub fn open_new_profile_window(&mut self) {
-		self.new_profile_open = true;
-		self.new_profile_name.clear();
 	}
 
 	pub fn create_profile(&mut self) {
@@ -97,21 +97,24 @@ impl Hed {
 			return;
 		}
 		self.profiles.push(Profile::new(&self.new_profile_name));
-		self.reset_new_profile_state();
+		self.close_new_profile_window();
 	}
 
-	pub fn reset_new_profile_state(&mut self) {
+	pub fn close_new_profile_window(&mut self) {
 		self.new_profile_name.clear();
 		self.new_profile_open = false;
 		self.new_pofile_ok = false;
 		self.new_profile_err = false;
 	}
 
-	pub fn mark_profile_deleted(&mut self) {
-		//
+	pub fn get_display_porfiles(&self) -> Vec<&Profile> {
+		self.profiles
+			.iter()
+			.filter(|p| p.name.contains(self.search_profile.trim()))
+			.collect()
 	}
 
-	pub fn check_deleted(&mut self) {
+	pub fn check_profile_deleted(&mut self) {
 		if let Some(id) = self.mark_deleted_profile_id {
 			self.profiles.retain(|p| p.id != id);
 			self.mark_deleted_profile_id = None;

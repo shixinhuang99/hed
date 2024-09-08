@@ -5,8 +5,7 @@ use eframe::egui_wgpu;
 
 use hed::{consts::APP_NAME, Hed};
 
-#[tokio::main]
-async fn main() {
+fn main() {
 	if let Err(err) = run() {
 		eprintln!("{}", err);
 	}

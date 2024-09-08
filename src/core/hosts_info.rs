@@ -1,8 +1,7 @@
-use std::{net::IpAddr, path::PathBuf, str::FromStr};
+use std::{fs, net::IpAddr, path::PathBuf, str::FromStr};
 
 use anyhow::Result;
 use indexmap::{IndexMap, IndexSet};
-use tokio::fs;
 
 #[derive(Default, Debug)]
 pub struct HostsInfo {
@@ -11,8 +10,8 @@ pub struct HostsInfo {
 }
 
 impl HostsInfo {
-	pub async fn parse_from_file(hosts_path: PathBuf) -> Result<Self> {
-		let content = fs::read_to_string(hosts_path).await?;
+	pub fn parse_from_file(hosts_path: PathBuf) -> Result<Self> {
+		let content = fs::read_to_string(hosts_path)?;
 
 		let mut parse_result = HostsInfo::default();
 
@@ -98,10 +97,10 @@ mod tests {
 		assert_eq!(strip_comment(s), expect);
 	}
 
-	#[tokio::test]
-	async fn test_hed_parse() {
+	#[test]
+	fn test_hed_parse() {
 		let hosts_path = env::current_dir().unwrap().join("fixture/hosts");
-		let hosts_info = HostsInfo::parse_from_file(hosts_path).await.unwrap();
+		let hosts_info = HostsInfo::parse_from_file(hosts_path).unwrap();
 
 		assert_debug_snapshot!(hosts_info);
 	}
