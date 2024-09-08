@@ -1,6 +1,6 @@
+use crate::core::Hed;
 #[cfg(feature = "_dev")]
 use crate::ui::dev_window::dev_window;
-use crate::Hed;
 
 use super::new_profile::new_profile_window;
 

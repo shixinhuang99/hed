@@ -13,13 +13,15 @@ pub struct TaskHandler {
 	pub rx: Receiver,
 }
 
-impl TaskHandler {
-	pub fn new() -> Self {
+impl Default for TaskHandler {
+	fn default() -> Self {
 		let (tx, rx) = channel(100);
 
 		Self { tx, rx }
 	}
+}
 
+impl TaskHandler {
 	pub fn invoke(&self, event: Invoke) {
 		match event {
 			Invoke::Parse(hosts_path) => {

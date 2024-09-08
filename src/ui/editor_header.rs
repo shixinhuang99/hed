@@ -1,4 +1,4 @@
-use crate::Hed;
+use crate::core::Hed;
 
 pub fn editor_header(ctx: &egui::Context, _hed: &mut Hed) {
 	egui::TopBottomPanel::top("editor_header")

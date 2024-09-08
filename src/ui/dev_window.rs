@@ -1,4 +1,4 @@
-use crate::Hed;
+use crate::core::Hed;
 
 pub fn dev_window(ctx: &egui::Context, ui: &mut egui::Ui, hed: &mut Hed) {
 	if ui.button("dev_window").clicked() {

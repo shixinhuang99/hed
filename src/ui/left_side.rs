@@ -1,10 +1,16 @@
 use egui::{Context, Frame, Margin, RichText, ScrollArea, SidePanel, TextEdit};
 
 use super::widgets::ProfileLabel;
-use crate::Hed;
+use crate::core::{Hed, Profile};
 
 pub fn left_side(ctx: &Context, hed: &mut Hed) {
 	let ctx_style = &ctx.style();
+	hed.check_deleted();
+	let display_profiles = hed
+		.profiles
+		.iter()
+		.filter(|p| p.name.contains(hed.search_profile.trim()))
+		.collect::<Vec<&Profile>>();
 	SidePanel::left("left_side")
 		.width_range(200.0..=400.0)
 		.resizable(true)
@@ -26,7 +32,7 @@ pub fn left_side(ctx: &Context, hed: &mut Hed) {
 			});
 			ScrollArea::vertical().show(ui, |ui| {
 				ui.set_width(panel_width);
-				for profile in &hed.profiles {
+				for profile in display_profiles {
 					let selected = profile.id == hed.selected_profile_id;
 					let enalebd = profile.id == hed.enabled_profile_id;
 					Frame::none()
@@ -58,10 +64,11 @@ pub fn left_side(ctx: &Context, hed: &mut Hed) {
 								let spacing = ui.spacing_mut();
 								spacing.button_padding.y = 8.0;
 								if ui.button("Enable This Profile").clicked() {
-									ui.close_menu();
+									hed.enabled_profile_id = profile.id;
 								}
 								if ui.button("Delete").clicked() {
-									ui.close_menu();
+									hed.mark_deleted_profile_id =
+										Some(profile.id);
 								}
 							});
 						});
