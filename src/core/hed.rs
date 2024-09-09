@@ -18,11 +18,9 @@ pub struct Hed {
 	pub enabled_profile_id: usize,
 	pub selected_profile_id: usize,
 	pub search_profile: String,
-	pub new_profile_open: bool,
+	pub new_profile_window_open: bool,
 	pub new_profile_name: String,
-	pub new_pofile_ok: bool,
-	pub new_profile_err: bool,
-	pub mark_deleted_profile_id: Option<usize>,
+	pub new_profile_err: String,
 }
 
 impl Hed {
@@ -41,11 +39,9 @@ impl Hed {
 			profiles: vec![sys_profile],
 			profiles_loading: false,
 			search_profile: String::new(),
-			new_profile_open: false,
+			new_profile_window_open: false,
 			new_profile_name: String::new(),
-			new_pofile_ok: false,
-			new_profile_err: false,
-			mark_deleted_profile_id: None,
+			new_profile_err: String::new(),
 		})
 	}
 
@@ -83,41 +79,28 @@ impl Hed {
 	}
 
 	pub fn create_profile(&mut self) {
-		if self.new_profile_name.trim().is_empty() {
-			self.new_pofile_ok = false;
+		let new_name = self.new_profile_name.trim();
+		if new_name.is_empty() {
 			return;
 		}
-		if self
-			.profiles
-			.iter()
-			.any(|p| p.name == self.new_profile_name)
-		{
-			self.new_profile_err = true;
-			self.new_pofile_ok = false;
+		if self.profiles.iter().any(|p| p.name == new_name) {
+			self.new_profile_err = format!("`{}` already exists", new_name);
 			return;
 		}
-		self.profiles.push(Profile::new(&self.new_profile_name));
+		self.profiles.push(Profile::new(new_name));
 		self.close_new_profile_window();
 	}
 
 	pub fn close_new_profile_window(&mut self) {
 		self.new_profile_name.clear();
-		self.new_profile_open = false;
-		self.new_pofile_ok = false;
-		self.new_profile_err = false;
+		self.new_profile_err.clear();
+		self.new_profile_window_open = false;
 	}
 
-	pub fn get_display_porfiles(&self) -> Vec<&Profile> {
-		self.profiles
-			.iter()
-			.filter(|p| p.name.contains(self.search_profile.trim()))
-			.collect()
-	}
-
-	pub fn check_profile_deleted(&mut self) {
-		if let Some(id) = self.mark_deleted_profile_id {
-			self.profiles.retain(|p| p.id != id);
-			self.mark_deleted_profile_id = None;
+	pub fn remove_profile(&mut self, id: usize) {
+		self.profiles.retain(|p| p.id != id);
+		if self.selected_profile_id == id {
+			self.selected_profile_id = self.profiles[0].id;
 		}
 	}
 }
