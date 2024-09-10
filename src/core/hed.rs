@@ -60,6 +60,7 @@ impl Hed {
 						.iter_mut()
 						.find(|p| p.id == self.enabled_profile_id)
 					{
+						profile.content_draft = hosts_info.content.clone();
 						profile.hosts_info = hosts_info;
 					}
 					self.profiles_loading = false;
@@ -102,5 +103,11 @@ impl Hed {
 		if self.selected_profile_id == id {
 			self.selected_profile_id = self.profiles[0].id;
 		}
+	}
+
+	pub fn selected_profile_mut(&mut self) -> Option<&mut Profile> {
+		self.profiles
+			.iter_mut()
+			.find(|p| p.id == self.selected_profile_id)
 	}
 }

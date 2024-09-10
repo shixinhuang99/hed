@@ -1,3 +1,4 @@
+mod common;
 mod editor;
 mod editor_header;
 mod header;

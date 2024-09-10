@@ -1,6 +1,6 @@
 use egui::{Align, Context, Layout, TopBottomPanel, Ui, Visuals, Window};
 
-use super::new_profile::new_profile_window;
+use super::{common::set_button_padding, new_profile::new_profile_window};
 use crate::core::Hed;
 
 pub fn header(ctx: &Context, hed: &mut Hed) {
@@ -10,9 +10,11 @@ pub fn header(ctx: &Context, hed: &mut Hed) {
 			ui.horizontal_centered(|ui| {
 				ui.heading("Hed");
 				ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-					ui.spacing_mut().button_padding.y = 6.0;
+					set_button_padding(ui);
+
 					#[cfg(feature = "_dev")]
 					dev_window(ctx, ui, hed);
+
 					theme_switch(ctx, ui);
 					new_profile_window(ctx, ui, hed);
 				});

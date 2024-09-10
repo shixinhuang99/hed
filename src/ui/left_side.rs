@@ -1,6 +1,6 @@
 use egui::{
-	Button, Context, Direction, Frame, Layout, Margin, RichText, ScrollArea,
-	SidePanel, Spinner, TextEdit, Ui,
+	Button, Context, Frame, Margin, RichText, ScrollArea, SidePanel, Spinner,
+	TextEdit, Ui,
 };
 
 use super::widgets::ProfileLabel;
@@ -21,12 +21,9 @@ pub fn left_side(ctx: &Context, hed: &mut Hed) {
 
 fn panel_content(ui: &mut Ui, hed: &mut Hed) {
 	if hed.profiles_loading {
-		ui.with_layout(
-			Layout::centered_and_justified(Direction::LeftToRight),
-			|ui| {
-				ui.add(Spinner::new().size(30.0));
-			},
-		);
+		ui.centered_and_justified(|ui| {
+			ui.add(Spinner::new().size(30.0));
+		});
 		return;
 	}
 	search_input(ui, hed);
