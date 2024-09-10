@@ -1,4 +1,6 @@
-use egui::{Align, Context, Layout, TopBottomPanel, Ui, Visuals, Window};
+#[cfg(feature = "_dev")]
+use egui::Window;
+use egui::{Align, Context, Layout, TopBottomPanel, Ui, Visuals};
 
 use super::{common::set_button_padding, new_profile::new_profile_window};
 use crate::core::Hed;
