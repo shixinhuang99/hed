@@ -25,9 +25,11 @@ eframe = { version = "0.28.1", default-features = false, features = [
 ] }
 egui = "0.28.1"
 indexmap = "2.5.0"
-insta = "1.39.0"
-test-case = "3.3.1"
 thiserror = "1.0.63"
+
+[dev-dependencies]
+insta = "1.39.0"
+rstest = "0.22.0"
 
 [features]
 _dev = []
