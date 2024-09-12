@@ -13,3 +13,7 @@ pub fn save_btn_shortcut() -> KeyboardShortcut {
 pub fn reset_btn_shortcut() -> KeyboardShortcut {
 	KeyboardShortcut::new(Modifiers::CTRL, Key::R)
 }
+
+pub fn pretty_btn_shortcut() -> KeyboardShortcut {
+	KeyboardShortcut::new(Modifiers::SHIFT | Modifiers::ALT, Key::F)
+}

@@ -37,13 +37,13 @@ fn create_native_options() -> eframe::NativeOptions {
 }
 
 fn create_viewport_builder() -> egui::ViewportBuilder {
-	const MIN_SIZE: [f32; 2] = [900.0, 600.0];
-	const APP_TITLE: &str = "Hed";
+	let min_size = [1000.0, 700.0];
+	let title: &str = "Hed";
 
 	egui::ViewportBuilder::default()
-		.with_min_inner_size(MIN_SIZE)
-		.with_inner_size(MIN_SIZE)
-		.with_title(APP_TITLE)
+		.with_min_inner_size(min_size)
+		.with_inner_size(min_size)
+		.with_title(title)
 }
 
 fn create_wgpu_options() -> egui_wgpu::WgpuConfiguration {

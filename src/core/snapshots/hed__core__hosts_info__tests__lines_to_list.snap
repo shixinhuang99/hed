@@ -1,0 +1,31 @@
+---
+source: src/core/hosts_info.rs
+expression: list
+---
+[
+    IpHosts {
+        ip: "172.16.254.1",
+        enabled_hosts: {
+            "a.com",
+            "c.com",
+            "d.com",
+        },
+        disabled_hosts: {},
+    },
+    IpHosts {
+        ip: "2402:1200:4f00:1234:0000:5678:9abc:def0",
+        enabled_hosts: {
+            "b.com",
+        },
+        disabled_hosts: {},
+    },
+    IpHosts {
+        ip: "127.0.0.1",
+        enabled_hosts: {
+            "e.com",
+        },
+        disabled_hosts: {
+            "f.com",
+        },
+    },
+]

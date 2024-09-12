@@ -1,26 +1,30 @@
-use std::{fs, net::IpAddr, path::PathBuf};
+use std::{
+	collections::{HashMap, HashSet},
+	fs,
+	net::IpAddr,
+	path::PathBuf,
+};
 
 use anyhow::Result;
-use indexmap::{IndexMap, IndexSet};
-
-type IpHostsMap = IndexMap<String, Hosts>;
+use indexmap::IndexSet;
 
 const HED_COMMENT_MARK: &str = "#(hed)";
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct HostsInfo {
 	pub content: String,
-	pub map: IpHostsMap,
+	pub list: Vec<IpHosts>,
 	pub lines: Vec<LineKind>,
 }
 
-#[derive(Debug)]
-pub struct Hosts {
-	pub enabled: IndexSet<String>,
-	pub disabled: IndexSet<String>,
+#[derive(Debug, Clone)]
+pub struct IpHosts {
+	pub ip: String,
+	pub enabled_hosts: IndexSet<String>,
+	pub disabled_hosts: IndexSet<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum LineKind {
 	Valid(ValidLine),
 	Comment(String),
@@ -28,7 +32,7 @@ pub enum LineKind {
 	Other(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ValidLine {
 	ip: String,
 	hosts: Vec<String>,
@@ -40,13 +44,24 @@ impl HostsInfo {
 	pub fn parse_from_file(hosts_path: PathBuf) -> Result<Self> {
 		let content = fs::read_to_string(hosts_path)?;
 		let lines = content_to_lines(&content);
-		let map = lines_to_map(&lines);
+		let list = lines_to_list(&lines);
 
 		Ok(Self {
 			content,
-			map,
+			list,
 			lines,
 		})
+	}
+
+	pub fn pretty(&mut self) {
+		self.lines = new_lines_by_list(&self.lines, &self.list);
+		self.content =
+			lines_to_content(&self.lines, cfg!(target_os = "windows"));
+	}
+
+	pub fn update_by_content_change(&mut self) {
+		self.lines = content_to_lines(&self.content);
+		self.list = lines_to_list(&self.lines);
 	}
 }
 
@@ -79,12 +94,6 @@ fn content_to_lines(s: &str) -> Vec<LineKind> {
 fn lines_to_content(lines: &[LineKind], is_win: bool) -> String {
 	let mut text_lines: Vec<String> = vec![];
 
-	let mut is_previous_line_empty = if lines.len() > 1 {
-		matches!(lines[0], LineKind::Empty)
-	} else {
-		false
-	};
-
 	for line in lines {
 		let text = match line {
 			LineKind::Valid(valid_line) => {
@@ -101,15 +110,8 @@ fn lines_to_content(lines: &[LineKind], is_win: bool) -> String {
 			}
 			LineKind::Comment(s) => s.clone(),
 			LineKind::Other(s) => s.clone(),
-			LineKind::Empty => {
-				if is_previous_line_empty {
-					continue;
-				}
-				String::new()
-			}
+			LineKind::Empty => String::new(),
 		};
-
-		is_previous_line_empty = matches!(line, LineKind::Empty);
 
 		text_lines.push(text);
 	}
@@ -174,17 +176,19 @@ fn is_ip(s: &str) -> bool {
 	s.parse::<IpAddr>().is_ok()
 }
 
-impl Hosts {
-	pub fn new(hosts: Vec<String>, enabled: bool) -> Self {
+impl IpHosts {
+	pub fn new(ip: &str, hosts: Vec<String>, enabled: bool) -> Self {
 		if enabled {
 			Self {
-				enabled: IndexSet::from_iter(hosts),
-				disabled: IndexSet::new(),
+				ip: ip.to_string(),
+				enabled_hosts: IndexSet::from_iter(hosts),
+				disabled_hosts: IndexSet::new(),
 			}
 		} else {
 			Self {
-				enabled: IndexSet::new(),
-				disabled: IndexSet::from_iter(hosts),
+				ip: ip.to_string(),
+				enabled_hosts: IndexSet::new(),
+				disabled_hosts: IndexSet::from_iter(hosts),
 			}
 		}
 	}
@@ -192,44 +196,51 @@ impl Hosts {
 	pub fn add(&mut self, hosts: Vec<String>, enabled: bool) {
 		if enabled {
 			for host in hosts {
-				self.enabled.insert(host);
+				self.enabled_hosts.insert(host);
 			}
 		} else {
 			for host in hosts {
-				self.disabled.insert(host);
+				self.disabled_hosts.insert(host);
 			}
 		}
 	}
+
+	pub fn contains(&self, s: &str) -> bool {
+		self.ip.contains(s)
+			|| self.enabled_hosts.iter().any(|host| host.contains(s))
+			|| self.disabled_hosts.iter().any(|host| host.contains(s))
+	}
 }
 
-fn lines_to_map(lines: &[LineKind]) -> IpHostsMap {
-	let mut map: IpHostsMap = IndexMap::new();
+fn lines_to_list(lines: &[LineKind]) -> Vec<IpHosts> {
+	let mut list: Vec<IpHosts> = vec![];
+
+	let mut ip_index_map: HashMap<&str, usize> = HashMap::new();
 
 	for line in lines {
 		if let LineKind::Valid(valid_line) = line {
-			if let Some(hosts) = map.get_mut(&valid_line.ip) {
-				hosts.add(valid_line.hosts.clone(), valid_line.enabled);
+			if let Some(idx) = ip_index_map.get(valid_line.ip.as_str()) {
+				if let Some(ip_hosts) = list.get_mut(*idx) {
+					ip_hosts.add(valid_line.hosts.clone(), valid_line.enabled);
+				}
 			} else {
-				map.insert(
-					valid_line.ip.clone(),
-					Hosts::new(valid_line.hosts.clone(), valid_line.enabled),
-				);
+				list.push(IpHosts::new(
+					&valid_line.ip,
+					valid_line.hosts.clone(),
+					valid_line.enabled,
+				));
+				ip_index_map.insert(&valid_line.ip, list.len() - 1);
 			}
 		}
 	}
 
-	map
+	list
 }
 
-fn new_lines_by_map(
-	lines: Vec<LineKind>,
-	ip_hosts_map: &IpHostsMap,
-) -> Vec<LineKind> {
-	use std::collections::{HashMap, HashSet};
-
+fn new_lines_by_list(lines: &[LineKind], list: &[IpHosts]) -> Vec<LineKind> {
 	let mut ip_enabled_set: HashSet<String> = HashSet::new();
 	let mut should_be_removed: HashSet<usize> = HashSet::new();
-	let mut is_previous_line_empty = if lines.len() > 1 {
+	let mut is_previous_line_empty = if !lines.is_empty() {
 		matches!(lines[0], LineKind::Empty)
 	} else {
 		false
@@ -260,9 +271,9 @@ fn new_lines_by_map(
 
 	let mut new_lines: Vec<LineKind> = vec![];
 
-	for (i, line) in lines.into_iter().enumerate() {
+	for (i, line) in lines.iter().enumerate() {
 		if !should_be_removed.contains(&i) {
-			new_lines.push(line);
+			new_lines.push(line.clone());
 		}
 	}
 
@@ -274,35 +285,40 @@ fn new_lines_by_map(
 		}
 	}
 
-	for (ip, hosts) in ip_hosts_map {
-		if let Some(line_idx) = ip_index_map.get(ip) {
-			if let Some(LineKind::Valid(valid_line)) =
-				new_lines.get_mut(*line_idx)
-			{
+	for ip_hosts in list {
+		if let Some(idx) = ip_index_map.get(&ip_hosts.ip) {
+			if let Some(LineKind::Valid(valid_line)) = new_lines.get_mut(*idx) {
 				valid_line.hosts = if valid_line.enabled {
-					Vec::from_iter(hosts.enabled.clone())
+					Vec::from_iter(ip_hosts.enabled_hosts.clone())
 				} else {
-					Vec::from_iter(hosts.disabled.clone())
+					Vec::from_iter(ip_hosts.disabled_hosts.clone())
 				}
 			}
 		} else {
-			if !hosts.enabled.is_empty() {
+			if !ip_hosts.enabled_hosts.is_empty() {
 				new_lines.push(LineKind::Valid(ValidLine {
-					ip: ip.clone(),
-					hosts: Vec::from_iter(hosts.enabled.clone()),
+					ip: ip_hosts.ip.clone(),
+					hosts: Vec::from_iter(ip_hosts.enabled_hosts.clone()),
 					comment: None,
 					enabled: true,
 				}));
 			}
-			if !hosts.disabled.is_empty() {
+			if !ip_hosts.disabled_hosts.is_empty() {
 				new_lines.push(LineKind::Valid(ValidLine {
-					ip: ip.clone(),
-					hosts: Vec::from_iter(hosts.disabled.clone()),
+					ip: ip_hosts.ip.clone(),
+					hosts: Vec::from_iter(ip_hosts.disabled_hosts.clone()),
 					comment: None,
 					enabled: false,
 				}));
 			}
 		}
+	}
+
+	if new_lines
+		.last()
+		.is_some_and(|line| !matches!(line, LineKind::Empty))
+	{
+		new_lines.push(LineKind::Empty);
 	}
 
 	new_lines
@@ -316,7 +332,7 @@ mod tests {
 	use rstest::{fixture, rstest};
 
 	use super::{
-		content_to_lines, lines_to_content, lines_to_map, new_lines_by_map,
+		content_to_lines, lines_to_content, lines_to_list, new_lines_by_list,
 	};
 
 	#[fixture]
@@ -333,35 +349,48 @@ mod tests {
 	}
 
 	#[rstest]
-	fn test_lines_to_map(content: String) {
-		let lines = content_to_lines(&content);
-		let map = lines_to_map(&lines);
-
-		assert_debug_snapshot!("lines_to_map", map);
-	}
-
-	#[rstest]
-	fn test_lines_to_content(content: String) {
+	fn test_lines_to_content_win(content: String) {
 		let lines = content_to_lines(&content);
 		let new_content_win = lines_to_content(&lines, true);
-		let new_content_mac = lines_to_content(&lines, false);
 
 		assert_debug_snapshot!("lines_to_content_win", new_content_win);
-		assert_debug_snapshot!("lines_to_content_mac", new_content_mac);
-		assert_snapshot!("lines_to_content_human_read", new_content_mac);
 	}
 
 	#[rstest]
-	fn test_new_lines_by_map(content: String) {
-		let mut lines = content_to_lines(&content);
-		let mut map = lines_to_map(&lines);
+	fn test_lines_to_content_mac(content: String) {
+		let lines = content_to_lines(&content);
+		let new_content_mac = lines_to_content(&lines, false);
 
-		for (i, hosts) in map.values_mut().enumerate() {
+		assert_debug_snapshot!("lines_to_content_mac", new_content_mac);
+	}
+
+	#[rstest]
+	fn test_lines_to_content_human_read(content: String) {
+		let lines = content_to_lines(&content);
+		let new_content = lines_to_content(&lines, false);
+
+		assert_snapshot!("lines_to_content_human_read", new_content);
+	}
+
+	#[rstest]
+	fn test_lines_to_list(content: String) {
+		let lines = content_to_lines(&content);
+		let list = lines_to_list(&lines);
+
+		assert_debug_snapshot!("lines_to_list", list);
+	}
+
+	#[rstest]
+	fn test_new_lines_by_list(content: String) {
+		let mut lines = content_to_lines(&content);
+		let mut list = lines_to_list(&lines);
+
+		for (i, hosts) in list.iter_mut().enumerate() {
 			hosts.add(vec![format!("foo{}.com", i)], false);
 		}
 
-		lines = new_lines_by_map(lines, &map);
+		lines = new_lines_by_list(&lines, &list);
 
-		assert_debug_snapshot!("new_lines_by_map", lines);
+		assert_debug_snapshot!("new_lines_by_list", lines);
 	}
 }

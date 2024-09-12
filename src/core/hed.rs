@@ -21,6 +21,14 @@ pub struct Hed {
 	pub new_profile_window_open: bool,
 	pub new_profile_name: String,
 	pub new_profile_err: String,
+	pub editor_kind: EditorKind,
+	pub search_ip_hosts: String,
+}
+
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub enum EditorKind {
+	Options,
+	Text,
 }
 
 impl Hed {
@@ -42,6 +50,8 @@ impl Hed {
 			new_profile_window_open: false,
 			new_profile_name: String::new(),
 			new_profile_err: String::new(),
+			editor_kind: EditorKind::Options,
+			search_ip_hosts: String::new(),
 		})
 	}
 
@@ -60,7 +70,7 @@ impl Hed {
 						.iter_mut()
 						.find(|p| p.id == self.enabled_profile_id)
 					{
-						profile.content_draft = hosts_info.content.clone();
+						profile.hosts_info_draft = hosts_info.clone();
 						profile.hosts_info = hosts_info;
 					}
 					self.profiles_loading = false;
@@ -103,11 +113,5 @@ impl Hed {
 		if self.selected_profile_id == id {
 			self.selected_profile_id = self.profiles[0].id;
 		}
-	}
-
-	pub fn selected_profile_mut(&mut self) -> Option<&mut Profile> {
-		self.profiles
-			.iter_mut()
-			.find(|p| p.id == self.selected_profile_id)
 	}
 }

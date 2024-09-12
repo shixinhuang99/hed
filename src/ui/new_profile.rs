@@ -50,7 +50,7 @@ fn form(ui: &mut Ui, hed: &mut Hed) {
 			.desired_width(f32::INFINITY)
 			.font(FontId::proportional(18.0))
 			.vertical_align(Align::Center)
-			.hint_text("new profile name"),
+			.hint_text("New profile name"),
 	);
 	if input_resp.lost_focus() && ui.input(|i| i.key_pressed(Key::Enter)) {
 		hed.create_profile();

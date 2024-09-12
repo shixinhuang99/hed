@@ -3,9 +3,10 @@ use egui::{
 };
 
 use super::common::{
-	reset_btn_shortcut, save_btn_shortcut, set_button_padding,
+	pretty_btn_shortcut, reset_btn_shortcut, save_btn_shortcut,
+	set_button_padding,
 };
-use crate::core::Hed;
+use crate::core::{EditorKind, Hed};
 
 pub fn editor_header(ctx: &Context, hed: &mut Hed) {
 	TopBottomPanel::top("editor_header")
@@ -20,7 +21,11 @@ fn panel_content(ctx: &Context, ui: &mut Ui, hed: &mut Hed) {
 		return;
 	}
 
-	let Some(profile) = hed.selected_profile_mut() else {
+	let Some(profile) = hed
+		.profiles
+		.iter_mut()
+		.find(|p| p.id == hed.selected_profile_id)
+	else {
 		return;
 	};
 
@@ -41,9 +46,24 @@ fn panel_content(ctx: &Context, ui: &mut Ui, hed: &mut Hed) {
 			},
 		);
 
-		ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-			set_button_padding(ui);
+		set_button_padding(ui);
 
+		if panel_width < 1200.0 {
+			ui.add_space(10.0);
+			ui.selectable_value(
+				&mut hed.editor_kind,
+				EditorKind::Options,
+				"Options View",
+			);
+			ui.heading("/");
+			ui.selectable_value(
+				&mut hed.editor_kind,
+				EditorKind::Text,
+				"Text View",
+			);
+		}
+
+		ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
 			if ui
 				.add_enabled(
 					changed,
@@ -67,6 +87,17 @@ fn panel_content(ctx: &Context, ui: &mut Ui, hed: &mut Hed) {
 			{
 				profile.save_content();
 			};
+
+			if ui
+				.add(
+					Button::new("pretty").shortcut_text(
+						ctx.format_shortcut(&pretty_btn_shortcut()),
+					),
+				)
+				.clicked()
+			{
+				profile.pretty();
+			}
 		});
 	});
 }

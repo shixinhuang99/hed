@@ -7,7 +7,7 @@ pub struct Profile {
 	pub id: usize,
 	pub name: String,
 	pub hosts_info: HostsInfo,
-	pub content_draft: String,
+	pub hosts_info_draft: HostsInfo,
 }
 
 impl Default for Profile {
@@ -16,7 +16,7 @@ impl Default for Profile {
 			id: GLOBAL_ID.next(),
 			name: String::new(),
 			hosts_info: HostsInfo::default(),
-			content_draft: String::new(),
+			hosts_info_draft: HostsInfo::default(),
 		}
 	}
 }
@@ -39,14 +39,22 @@ impl Profile {
 	}
 
 	pub fn save_content(&mut self) {
-		self.hosts_info.content = self.content_draft.clone();
+		self.hosts_info.content = self.hosts_info_draft.content.clone();
 	}
 
 	pub fn reset_content(&mut self) {
-		self.content_draft = self.hosts_info.content.clone();
+		self.hosts_info_draft.content = self.hosts_info.content.clone();
 	}
 
 	pub fn is_changed(&self) -> bool {
-		self.content_draft != self.hosts_info.content
+		self.hosts_info_draft.content != self.hosts_info.content
+	}
+
+	pub fn update_by_content_change(&mut self) {
+		self.hosts_info_draft.update_by_content_change();
+	}
+
+	pub fn pretty(&mut self) {
+		self.hosts_info_draft.pretty();
 	}
 }

@@ -1,10 +1,14 @@
 ---
 source: src/core/hosts_info.rs
-expression: new_content_mac
+expression: new_content
 ---
 #    comment
 
 172.16.254.1 a.com c.com c.com # ##     comment
+
+
+
+
 
 172.16.254.1 d.com c.com
 

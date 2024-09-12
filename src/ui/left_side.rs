@@ -38,7 +38,7 @@ fn search_input(ui: &mut Ui, hed: &mut Hed) {
 				.desired_width(f32::INFINITY)
 				.font(egui::FontId::proportional(20.0))
 				.vertical_align(egui::Align::Center)
-				.hint_text("Search Profile"),
+				.hint_text("Search profile"),
 		);
 	});
 }
