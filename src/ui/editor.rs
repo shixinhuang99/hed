@@ -1,11 +1,14 @@
 use egui::{
-	Align, CentralPanel, Context, FontId, Frame, Margin, ScrollArea, TextEdit,
-	Ui,
+	Button, CentralPanel, Context, FontId, Margin, ScrollArea, SelectableLabel,
+	TextEdit, Ui,
 };
 
-use super::common::{
-	pretty_btn_shortcut, reset_btn_shortcut, save_btn_shortcut,
-	set_button_padding,
+use super::{
+	common::{
+		pretty_btn_shortcut, reset_btn_shortcut, save_btn_shortcut,
+		set_button_padding,
+	},
+	component::{div, form_window, input, text_area},
 };
 use crate::core::{EditorKind, Hed};
 
@@ -34,17 +37,14 @@ fn panel_content(ui: &mut Ui, hed: &mut Hed) {
 
 			ui.horizontal(|ui| {
 				ui.set_height(30.0);
-				if ui.button("+ Add item").clicked() {
-					//
+				if ui.button("+ New item").clicked() {
+					hed.new_item_window_open = true;
 				}
-				ui.add(
-					TextEdit::singleline(&mut hed.search_ip_hosts)
-						.desired_width(f32::INFINITY)
-						.font(FontId::monospace(16.0))
-						.vertical_align(Align::Center)
-						.margin(Margin::symmetric(6.0, 4.0))
-						.hint_text("Search ip, hosts"),
-				);
+				ui.add(input(
+					&mut hed.search_ip_hosts,
+					"Search ip, hosts",
+					true,
+				));
 			});
 
 			ui.separator();
@@ -54,55 +54,112 @@ fn panel_content(ui: &mut Ui, hed: &mut Hed) {
 					if !ip_hosts.contains(&hed.search_ip_hosts) {
 						continue;
 					}
-					Frame::none()
-						.inner_margin(Margin {
+					div(
+						ui,
+						Margin {
 							right: 8.0,
 							..Default::default()
-						})
-						.show(ui, |ui| {
+						},
+						|ui| {
 							ui.horizontal(|ui| {
 								ui.vertical(|ui| {
 									ui.add_space(8.0);
 									ui.horizontal(|ui| {
-										if ui.button("⛭").clicked() {
-											//
-										}
-										ui.add(
-											TextEdit::singleline(
-												&mut ip_hosts.ip,
-											)
-											.font(FontId::monospace(16.0))
-											.vertical_align(Align::Center)
-											.margin(Margin::symmetric(
-												6.0, 4.0,
-											)),
-										);
+										ui.menu_button("⛭", |ui| {
+											if ui.button("Add host").clicked() {
+												//
+											}
+											if ui.button("Enable").clicked() {
+												//
+											}
+											if ui.button("Delete").clicked() {
+												//
+											}
+										});
+										ui.add(input(
+											&mut ip_hosts.ip,
+											"ip",
+											false,
+										));
 									});
 								});
 								ui.horizontal_wrapped(|ui| {
+									let mut to_disabled_hosts = vec![];
 									for host in &ip_hosts.enabled_hosts {
-										if ui
-											.selectable_label(true, host)
-											.clicked()
+										let resp = ui.add(
+											SelectableLabel::new(true, host),
+										);
+										if resp.clicked() {
+											to_disabled_hosts
+												.push(host.clone());
+										}
+										resp.context_menu(|ui| {
+											if ui.button("Edit").clicked() {
+												//
+											}
+											if ui.button("Delete").clicked() {
+												//
+											}
+										});
+									}
+									for host in to_disabled_hosts {
+										if ip_hosts
+											.enabled_hosts
+											.shift_remove(&host)
 										{
-											//
+											ip_hosts
+												.disabled_hosts
+												.insert(host);
 										}
 									}
+									let mut to_enabled_hosts = vec![];
 									for host in &ip_hosts.disabled_hosts {
-										if ui
-											.selectable_label(false, host)
-											.clicked()
+										let resp = ui.add(Button::new(host));
+										if resp.clicked() {
+											to_enabled_hosts.push(host.clone());
+										}
+										resp.context_menu(|ui| {
+											if ui.button("Edit").clicked() {
+												//
+											}
+											if ui.button("Delete").clicked() {
+												//
+											}
+										});
+									}
+									for host in to_enabled_hosts {
+										if ip_hosts
+											.disabled_hosts
+											.shift_remove(&host)
 										{
-											//
+											ip_hosts.enabled_hosts.insert(host);
 										}
 									}
 								});
 							});
-						});
+						},
+					);
+
 					ui.separator();
 				}
 			});
 		});
+
+		let resp =
+			form_window(ui, "New item", hed.new_item_window_open, |ui| {
+				ui.heading("ip: ");
+				ui.add(input(&mut hed.new_item_ip, "ip", true));
+				ui.end_row();
+				ui.heading("hosts: ");
+				ui.add(text_area(&mut hed.new_item_hosts, "hosts"));
+				ui.end_row();
+			});
+		if resp.close {
+			// hed.close_new_item_window();
+		}
+		if resp.ok {
+			// hed.new_item();
+		}
 	};
 
 	match hed.editor_kind {

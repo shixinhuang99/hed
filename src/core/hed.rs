@@ -23,6 +23,10 @@ pub struct Hed {
 	pub new_profile_err: String,
 	pub editor_kind: EditorKind,
 	pub search_ip_hosts: String,
+	pub new_item_window_open: bool,
+	pub new_item_ip: String,
+	pub new_item_hosts: String,
+	pub new_item_err: String,
 }
 
 #[derive(PartialEq, Eq, Clone, Copy)]
@@ -52,6 +56,10 @@ impl Hed {
 			new_profile_err: String::new(),
 			editor_kind: EditorKind::Options,
 			search_ip_hosts: String::new(),
+			new_item_window_open: false,
+			new_item_ip: String::new(),
+			new_item_hosts: String::new(),
+			new_item_err: String::new(),
 		})
 	}
 
@@ -113,5 +121,16 @@ impl Hed {
 		if self.selected_profile_id == id {
 			self.selected_profile_id = self.profiles[0].id;
 		}
+	}
+
+	pub fn new_item(&mut self) {
+		self.close_new_item_window();
+	}
+
+	pub fn close_new_item_window(&mut self) {
+		self.new_item_ip.clear();
+		self.new_item_hosts.clear();
+		self.new_item_err.clear();
+		self.new_item_window_open = false;
 	}
 }
