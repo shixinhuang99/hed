@@ -6,7 +6,8 @@ use std::{
 };
 
 use anyhow::Result;
-use indexmap::IndexSet;
+
+use super::ip_hosts::IpHosts;
 
 const HED_COMMENT_MARK: &str = "#(hed)";
 
@@ -15,13 +16,6 @@ pub struct HostsInfo {
 	pub content: String,
 	pub list: Vec<IpHosts>,
 	pub lines: Vec<LineKind>,
-}
-
-#[derive(Debug, Clone)]
-pub struct IpHosts {
-	pub ip: String,
-	pub enabled_hosts: IndexSet<String>,
-	pub disabled_hosts: IndexSet<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -176,42 +170,6 @@ fn is_ip(s: &str) -> bool {
 	s.parse::<IpAddr>().is_ok()
 }
 
-impl IpHosts {
-	pub fn new(ip: &str, hosts: Vec<String>, enabled: bool) -> Self {
-		if enabled {
-			Self {
-				ip: ip.to_string(),
-				enabled_hosts: IndexSet::from_iter(hosts),
-				disabled_hosts: IndexSet::new(),
-			}
-		} else {
-			Self {
-				ip: ip.to_string(),
-				enabled_hosts: IndexSet::new(),
-				disabled_hosts: IndexSet::from_iter(hosts),
-			}
-		}
-	}
-
-	pub fn add(&mut self, hosts: Vec<String>, enabled: bool) {
-		if enabled {
-			for host in hosts {
-				self.enabled_hosts.insert(host);
-			}
-		} else {
-			for host in hosts {
-				self.disabled_hosts.insert(host);
-			}
-		}
-	}
-
-	pub fn contains(&self, s: &str) -> bool {
-		self.ip.contains(s)
-			|| self.enabled_hosts.iter().any(|host| host.contains(s))
-			|| self.disabled_hosts.iter().any(|host| host.contains(s))
-	}
-}
-
 fn lines_to_list(lines: &[LineKind]) -> Vec<IpHosts> {
 	let mut list: Vec<IpHosts> = vec![];
 
@@ -286,27 +244,51 @@ fn new_lines_by_list(lines: &[LineKind], list: &[IpHosts]) -> Vec<LineKind> {
 	}
 
 	for ip_hosts in list {
+		let enabled_hosts: Vec<String> = ip_hosts
+			.hosts
+			.iter()
+			.filter_map(|h| {
+				if h.enabled {
+					Some(h.name.clone())
+				} else {
+					None
+				}
+			})
+			.collect();
+
+		let disabled_hosts: Vec<String> = ip_hosts
+			.hosts
+			.iter()
+			.filter_map(|h| {
+				if !h.enabled {
+					Some(h.name.clone())
+				} else {
+					None
+				}
+			})
+			.collect();
+
 		if let Some(idx) = ip_index_map.get(&ip_hosts.ip) {
 			if let Some(LineKind::Valid(valid_line)) = new_lines.get_mut(*idx) {
 				valid_line.hosts = if valid_line.enabled {
-					Vec::from_iter(ip_hosts.enabled_hosts.clone())
+					enabled_hosts
 				} else {
-					Vec::from_iter(ip_hosts.disabled_hosts.clone())
+					disabled_hosts
 				}
 			}
 		} else {
-			if !ip_hosts.enabled_hosts.is_empty() {
+			if !enabled_hosts.is_empty() {
 				new_lines.push(LineKind::Valid(ValidLine {
 					ip: ip_hosts.ip.clone(),
-					hosts: Vec::from_iter(ip_hosts.enabled_hosts.clone()),
+					hosts: enabled_hosts,
 					comment: None,
 					enabled: true,
 				}));
 			}
-			if !ip_hosts.disabled_hosts.is_empty() {
+			if !disabled_hosts.is_empty() {
 				new_lines.push(LineKind::Valid(ValidLine {
 					ip: ip_hosts.ip.clone(),
-					hosts: Vec::from_iter(ip_hosts.disabled_hosts.clone()),
+					hosts: disabled_hosts,
 					comment: None,
 					enabled: false,
 				}));

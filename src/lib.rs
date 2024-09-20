@@ -12,6 +12,6 @@ impl eframe::App for Hed {
 		left_side(ctx, self);
 		editor_header(ctx, self);
 		editor(ctx, self);
-		self.handle_task_response();
+		self.handle_event();
 	}
 }

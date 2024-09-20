@@ -18,7 +18,8 @@ pub fn header(ctx: &Context, hed: &mut Hed) {
 					dev_window(ctx, ui, hed);
 
 					theme_switch(ctx, ui);
-					new_profile_window(ctx, ui, hed);
+
+					new_profile_window(ui, hed);
 				});
 			});
 		});

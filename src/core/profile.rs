@@ -1,7 +1,7 @@
 use super::HostsInfo;
 use crate::static_global_id;
 
-static_global_id!(2);
+static_global_id!(PROFILE_ID, 2);
 
 pub struct Profile {
 	pub id: usize,
@@ -13,7 +13,7 @@ pub struct Profile {
 impl Default for Profile {
 	fn default() -> Self {
 		Self {
-			id: GLOBAL_ID.next(),
+			id: PROFILE_ID.next(),
 			name: String::new(),
 			hosts_info: HostsInfo::default(),
 			hosts_info_draft: HostsInfo::default(),
@@ -24,7 +24,7 @@ impl Default for Profile {
 impl Profile {
 	pub fn new(name: &str) -> Self {
 		Self {
-			id: GLOBAL_ID.next(),
+			id: PROFILE_ID.next(),
 			name: name.to_string(),
 			..Default::default()
 		}

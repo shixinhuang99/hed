@@ -3,7 +3,11 @@ use egui::{
 	TextEdit, Ui, Window,
 };
 
-pub fn div(ui: &mut Ui, margin: Margin, child: impl FnOnce(&mut Ui)) {
+pub fn div(
+	ui: &mut Ui,
+	margin: impl Into<Margin>,
+	child: impl FnOnce(&mut Ui),
+) {
 	Frame::none().inner_margin(margin).show(ui, child);
 }
 

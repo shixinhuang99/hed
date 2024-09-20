@@ -2,8 +2,8 @@ use std::sync::atomic::{AtomicUsize, Ordering::Relaxed};
 
 #[macro_export]
 macro_rules! static_global_id {
-	($begin:literal) => {
-		static GLOBAL_ID: std::sync::LazyLock<$crate::util::GlobalID> =
+	($name: ident, $begin:literal) => {
+		static $name: std::sync::LazyLock<$crate::util::GlobalID> =
 			std::sync::LazyLock::new(|| $crate::util::GlobalID::new($begin));
 	};
 }

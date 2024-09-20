@@ -6,7 +6,7 @@ use super::common::{
 	pretty_btn_shortcut, reset_btn_shortcut, save_btn_shortcut,
 	set_button_padding,
 };
-use crate::core::{EditorKind, Hed};
+use crate::core::{Event, Hed};
 
 pub fn editor_header(ctx: &Context, hed: &mut Hed) {
 	TopBottomPanel::top("editor_header")
@@ -16,22 +16,17 @@ pub fn editor_header(ctx: &Context, hed: &mut Hed) {
 		});
 }
 
-fn panel_content(ctx: &Context, ui: &mut Ui, hed: &mut Hed) {
+fn panel_content(ctx: &Context, ui: &mut Ui, hed: &Hed) {
 	if hed.profiles_loading {
 		return;
 	}
 
-	let Some(profile) = hed
-		.profiles
-		.iter_mut()
-		.find(|p| p.id == hed.selected_profile_id)
-	else {
+	let Some(profile) = hed.get_selected_profile() else {
 		return;
 	};
 
 	let panel_width = ui.available_width();
 	let panel_height = ui.available_height();
-
 	let changed = profile.is_changed();
 
 	ui.horizontal(|ui| {
@@ -50,17 +45,14 @@ fn panel_content(ctx: &Context, ui: &mut Ui, hed: &mut Hed) {
 
 		if panel_width < 1200.0 {
 			ui.add_space(10.0);
-			ui.selectable_value(
-				&mut hed.editor_kind,
-				EditorKind::Options,
-				"Options View",
-			);
+			let options_view =
+				ui.selectable_label(hed.view_kind.is_options(), "Options View");
 			ui.heading("/");
-			ui.selectable_value(
-				&mut hed.editor_kind,
-				EditorKind::Text,
-				"Text View",
-			);
+			let text_view =
+				ui.selectable_label(hed.view_kind.is_text(), "Text View");
+			if options_view.clicked() || text_view.clicked() {
+				hed.send_event(Event::ToggleViewKind);
+			}
 		}
 
 		ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
@@ -73,7 +65,7 @@ fn panel_content(ctx: &Context, ui: &mut Ui, hed: &mut Hed) {
 				)
 				.clicked()
 			{
-				profile.reset_content();
+				hed.send_event(Event::ResetProfile);
 			}
 
 			if ui
@@ -85,7 +77,7 @@ fn panel_content(ctx: &Context, ui: &mut Ui, hed: &mut Hed) {
 				)
 				.clicked()
 			{
-				profile.save_content();
+				hed.send_event(Event::SavePorfile);
 			};
 
 			if ui
@@ -96,7 +88,7 @@ fn panel_content(ctx: &Context, ui: &mut Ui, hed: &mut Hed) {
 				)
 				.clicked()
 			{
-				profile.pretty();
+				// profile.pretty();
 			}
 		});
 	});
