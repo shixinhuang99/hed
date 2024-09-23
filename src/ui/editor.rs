@@ -5,7 +5,8 @@ use super::{
 		pretty_btn_shortcut, reset_btn_shortcut, save_btn_shortcut,
 		set_button_padding,
 	},
-	component::{div, form_window, input, text_area},
+	component::{div, input},
+	new_item::new_item_window,
 };
 use crate::core::{Event, Hed};
 
@@ -143,18 +144,5 @@ fn options_view(ui: &mut Ui, hed: &mut Hed) {
 		}
 	});
 
-	let resp = form_window(ui, "New item", hed.new_item_window_open, |ui| {
-		ui.heading("ip: ");
-		ui.add(input(&mut hed.new_item_ip, "ip", true));
-		ui.end_row();
-		ui.heading("hosts: ");
-		ui.add(text_area(&mut hed.new_item_hosts, "hosts"));
-		ui.end_row();
-	});
-	if resp.close {
-		// hed.close_new_item_window();
-	}
-	if resp.ok {
-		// hed.new_item();
-	}
+	new_item_window(ui, hed);
 }

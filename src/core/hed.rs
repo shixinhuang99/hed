@@ -4,6 +4,7 @@ use anyhow::Result;
 
 use super::{
 	channel::{Channel, Event},
+	item_form::ItemForm,
 	profile::Profile,
 	profile_form::ProfileForm,
 	view_kind::ViewKind,
@@ -28,9 +29,7 @@ pub struct Hed {
 	pub view_kind: ViewKind,
 	pub search_ip_hosts: String,
 	pub new_item_window_open: bool,
-	pub new_item_ip: String,
-	pub new_item_hosts: String,
-	pub new_item_err: String,
+	pub item_form: ItemForm,
 }
 
 impl Hed {
@@ -56,9 +55,7 @@ impl Hed {
 			view_kind: ViewKind::default(),
 			search_ip_hosts: String::new(),
 			new_item_window_open: false,
-			new_item_ip: String::new(),
-			new_item_hosts: String::new(),
-			new_item_err: String::new(),
+			item_form: ItemForm::default(),
 		})
 	}
 
@@ -225,5 +222,25 @@ impl Hed {
 		self.profiles
 			.iter_mut()
 			.find(|p| p.id == self.selected_profile_id)
+	}
+
+	pub fn close_new_item_window(&mut self) {
+		self.new_item_window_open = false;
+		self.item_form.reset();
+	}
+
+	pub fn new_item(&mut self) {
+		if !self.item_form.validate() {
+			return;
+		}
+		let Some(profile) = self
+			.profiles
+			.iter_mut()
+			.find(|p| p.id == self.selected_profile_id)
+		else {
+			return;
+		};
+		profile.hosts_info_draft.add_item(&self.item_form);
+		self.close_new_item_window();
 	}
 }

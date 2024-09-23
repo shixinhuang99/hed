@@ -1,13 +1,13 @@
 use std::{
 	collections::{HashMap, HashSet},
 	fs,
-	net::IpAddr,
 	path::PathBuf,
 };
 
 use anyhow::Result;
 
-use super::ip_hosts::IpHosts;
+use super::{ip_hosts::IpHosts, item_form::ItemForm};
+use crate::util::{is_ip, StringExt};
 
 const HED_COMMENT_MARK: &str = "#(hed)";
 
@@ -15,7 +15,7 @@ const HED_COMMENT_MARK: &str = "#(hed)";
 pub struct HostsInfo {
 	pub content: String,
 	pub list: Vec<IpHosts>,
-	pub lines: Vec<LineKind>,
+	lines: Vec<LineKind>,
 }
 
 #[derive(Debug, Clone)]
@@ -56,6 +56,18 @@ impl HostsInfo {
 	pub fn update_by_content_change(&mut self) {
 		self.lines = content_to_lines(&self.content);
 		self.list = lines_to_list(&self.lines);
+	}
+
+	pub fn add_item(&mut self, form: &ItemForm) {
+		if let Some(ih) = self.list.iter_mut().find(|ih| ih.ip == form.ip) {
+			ih.add(form.hosts.to_split_whitespace_vec(), true);
+		} else {
+			self.list.push(IpHosts::new(
+				&form.ip,
+				form.hosts.to_split_whitespace_vec(),
+				true,
+			));
+		}
 	}
 }
 
@@ -164,10 +176,6 @@ fn split_ip_hosts(s: &str) -> Option<(String, Vec<String>)> {
 	}
 
 	None
-}
-
-fn is_ip(s: &str) -> bool {
-	s.parse::<IpAddr>().is_ok()
 }
 
 fn lines_to_list(lines: &[LineKind]) -> Vec<IpHosts> {
