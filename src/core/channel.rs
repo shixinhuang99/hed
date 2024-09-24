@@ -5,13 +5,7 @@ use super::HostsInfo;
 pub enum Event {
 	ParseHostsOk(HostsInfo),
 	ParseHostsFail(String),
-	SelectProfile(usize),
-	EnableProfile(usize),
-	RemoveProfile(usize),
-	EditProfile(usize),
-	ToggleViewKind,
-	SavePorfile,
-	ResetProfile,
+	EditItemIp(usize, String),
 	ToggleHostEnable(usize, usize),
 }
 

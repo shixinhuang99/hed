@@ -16,7 +16,7 @@ fn run() -> Result<()> {
 		APP_NAME,
 		create_native_options(),
 		Box::new(|_| {
-			let mut hed = Hed::new()?;
+			let mut hed = Hed::default();
 
 			hed.init();
 

@@ -1,12 +1,9 @@
 use std::collections::HashSet;
 
-use crate::static_global_id;
-
-static_global_id!(IP_HOST_ID, 1);
-static_global_id!(HOST_ID, 1);
+use crate::util::{is_ip, GLOBAL_ID};
 
 #[derive(Debug, Clone)]
-pub struct IpHosts {
+pub struct Item {
 	pub id: usize,
 	pub ip: String,
 	pub hosts: Vec<Host>,
@@ -19,24 +16,24 @@ pub struct Host {
 	pub enabled: bool,
 }
 
-impl IpHosts {
+impl Item {
 	pub fn new(ip: &str, hosts: Vec<String>, enabled: bool) -> Self {
-		let mut ip_hosts = Self {
-			id: IP_HOST_ID.next(),
+		let mut item = Self {
+			id: GLOBAL_ID.next(),
 			ip: ip.to_string(),
 			hosts: hosts
 				.into_iter()
 				.map(|name| Host {
-					id: HOST_ID.next(),
+					id: GLOBAL_ID.next(),
 					name,
 					enabled,
 				})
 				.collect(),
 		};
 
-		ip_hosts.hosts_dedup();
+		item.hosts_dedup();
 
-		ip_hosts
+		item
 	}
 
 	fn hosts_dedup(&mut self) {
@@ -56,7 +53,7 @@ impl IpHosts {
 	pub fn add(&mut self, hosts: Vec<String>, enabled: bool) {
 		for name in hosts {
 			self.hosts.push(Host {
-				id: HOST_ID.next(),
+				id: GLOBAL_ID.next(),
 				name,
 				enabled,
 			});
@@ -68,5 +65,9 @@ impl IpHosts {
 	pub fn contains(&self, s: &str) -> bool {
 		self.ip.contains(s)
 			|| self.hosts.iter().any(|host| host.name.contains(s))
+	}
+
+	pub fn validate_ip(&self, ip: &str) -> bool {
+		is_ip(ip)
 	}
 }

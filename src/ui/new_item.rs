@@ -4,7 +4,7 @@ use super::component::{form_window, input, text_area};
 use crate::core::Hed;
 
 pub fn new_item_window(ui: &mut Ui, hed: &mut Hed) {
-	let resp = form_window(ui, "New item", hed.new_item_window_open, |ui| {
+	let window = form_window(ui, "New item", hed.new_item_window_open, |ui| {
 		ui.heading("ip: ");
 		let ip_input = ui.add(input(&mut hed.item_form.ip, "ip", true));
 		if !hed.item_form.ip_error.is_empty() {
@@ -26,11 +26,11 @@ pub fn new_item_window(ui: &mut Ui, hed: &mut Hed) {
 		ui.end_row();
 	});
 
-	if resp.close {
+	if window.close {
 		hed.close_new_item_window();
 	}
 
-	if resp.ok {
+	if window.ok {
 		hed.new_item();
 	}
 }

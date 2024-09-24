@@ -78,10 +78,10 @@ pub fn input<'a>(
 	full: bool,
 ) -> TextEdit<'a> {
 	let mut te = TextEdit::singleline(value)
-		.font(FontId::monospace(16.0))
 		.vertical_align(Align::Center)
 		.margin(Margin::symmetric(6.0, 4.0))
-		.hint_text(placeholder);
+		.hint_text(placeholder)
+		.font(FontId::proportional(15.0));
 
 	if full {
 		te = te.desired_width(f32::INFINITY);
@@ -95,7 +95,7 @@ pub fn text_area<'a>(
 	placeholder: &'static str,
 ) -> TextEdit<'a> {
 	TextEdit::multiline(value)
-		.font(FontId::monospace(16.0))
 		.margin(Margin::symmetric(6.0, 4.0))
 		.hint_text(placeholder)
+		.font(FontId::proportional(15.0))
 }

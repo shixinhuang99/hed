@@ -6,7 +6,7 @@ use std::{
 
 use anyhow::Result;
 
-use super::{ip_hosts::IpHosts, item_form::ItemForm};
+use super::{item::Item, item_form::ItemForm};
 use crate::util::{is_ip, StringExt};
 
 const HED_COMMENT_MARK: &str = "#(hed)";
@@ -14,7 +14,7 @@ const HED_COMMENT_MARK: &str = "#(hed)";
 #[derive(Default, Debug, Clone)]
 pub struct HostsInfo {
 	pub content: String,
-	pub list: Vec<IpHosts>,
+	pub list: Vec<Item>,
 	lines: Vec<LineKind>,
 }
 
@@ -47,22 +47,23 @@ impl HostsInfo {
 		})
 	}
 
-	pub fn pretty(&mut self) {
+	pub fn update_content(&mut self) {
 		self.lines = new_lines_by_list(&self.lines, &self.list);
 		self.content =
 			lines_to_content(&self.lines, cfg!(target_os = "windows"));
 	}
 
-	pub fn update_by_content_change(&mut self) {
+	pub fn update_list(&mut self) {
 		self.lines = content_to_lines(&self.content);
 		self.list = lines_to_list(&self.lines);
 	}
 
 	pub fn add_item(&mut self, form: &ItemForm) {
-		if let Some(ih) = self.list.iter_mut().find(|ih| ih.ip == form.ip) {
-			ih.add(form.hosts.to_split_whitespace_vec(), true);
+		if let Some(item) = self.list.iter_mut().find(|item| item.ip == form.ip)
+		{
+			item.add(form.hosts.to_split_whitespace_vec(), true);
 		} else {
-			self.list.push(IpHosts::new(
+			self.list.push(Item::new(
 				&form.ip,
 				form.hosts.to_split_whitespace_vec(),
 				true,
@@ -178,19 +179,19 @@ fn split_ip_hosts(s: &str) -> Option<(String, Vec<String>)> {
 	None
 }
 
-fn lines_to_list(lines: &[LineKind]) -> Vec<IpHosts> {
-	let mut list: Vec<IpHosts> = vec![];
+fn lines_to_list(lines: &[LineKind]) -> Vec<Item> {
+	let mut list: Vec<Item> = vec![];
 
 	let mut ip_index_map: HashMap<&str, usize> = HashMap::new();
 
 	for line in lines {
 		if let LineKind::Valid(valid_line) = line {
 			if let Some(idx) = ip_index_map.get(valid_line.ip.as_str()) {
-				if let Some(ip_hosts) = list.get_mut(*idx) {
-					ip_hosts.add(valid_line.hosts.clone(), valid_line.enabled);
+				if let Some(item) = list.get_mut(*idx) {
+					item.add(valid_line.hosts.clone(), valid_line.enabled);
 				}
 			} else {
-				list.push(IpHosts::new(
+				list.push(Item::new(
 					&valid_line.ip,
 					valid_line.hosts.clone(),
 					valid_line.enabled,
@@ -203,7 +204,7 @@ fn lines_to_list(lines: &[LineKind]) -> Vec<IpHosts> {
 	list
 }
 
-fn new_lines_by_list(lines: &[LineKind], list: &[IpHosts]) -> Vec<LineKind> {
+fn new_lines_by_list(lines: &[LineKind], list: &[Item]) -> Vec<LineKind> {
 	let mut ip_enabled_set: HashSet<String> = HashSet::new();
 	let mut should_be_removed: HashSet<usize> = HashSet::new();
 	let mut is_previous_line_empty = if !lines.is_empty() {
@@ -251,43 +252,29 @@ fn new_lines_by_list(lines: &[LineKind], list: &[IpHosts]) -> Vec<LineKind> {
 		}
 	}
 
-	for ip_hosts in list {
-		let enabled_hosts: Vec<String> = ip_hosts
-			.hosts
-			.iter()
-			.filter_map(|h| {
-				if h.enabled {
-					Some(h.name.clone())
-				} else {
-					None
-				}
-			})
-			.collect();
+	for item in list {
+		let mut enabled_hosts = vec![];
+		let mut disabled_hosts = vec![];
+		for host in &item.hosts {
+			if host.enabled {
+				enabled_hosts.push(host.name.clone());
+			} else {
+				disabled_hosts.push(host.name.clone());
+			}
+		}
 
-		let disabled_hosts: Vec<String> = ip_hosts
-			.hosts
-			.iter()
-			.filter_map(|h| {
-				if !h.enabled {
-					Some(h.name.clone())
-				} else {
-					None
-				}
-			})
-			.collect();
-
-		if let Some(idx) = ip_index_map.get(&ip_hosts.ip) {
+		if let Some(idx) = ip_index_map.get(&item.ip) {
 			if let Some(LineKind::Valid(valid_line)) = new_lines.get_mut(*idx) {
 				valid_line.hosts = if valid_line.enabled {
 					enabled_hosts
 				} else {
 					disabled_hosts
-				}
+				};
 			}
 		} else {
 			if !enabled_hosts.is_empty() {
 				new_lines.push(LineKind::Valid(ValidLine {
-					ip: ip_hosts.ip.clone(),
+					ip: item.ip.clone(),
 					hosts: enabled_hosts,
 					comment: None,
 					enabled: true,
@@ -295,7 +282,7 @@ fn new_lines_by_list(lines: &[LineKind], list: &[IpHosts]) -> Vec<LineKind> {
 			}
 			if !disabled_hosts.is_empty() {
 				new_lines.push(LineKind::Valid(ValidLine {
-					ip: ip_hosts.ip.clone(),
+					ip: item.ip.clone(),
 					hosts: disabled_hosts,
 					comment: None,
 					enabled: false,

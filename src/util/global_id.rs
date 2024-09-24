@@ -1,21 +1,18 @@
-use std::sync::atomic::{AtomicUsize, Ordering::Relaxed};
+use std::sync::{
+	atomic::{AtomicUsize, Ordering::Relaxed},
+	LazyLock,
+};
 
-#[macro_export]
-macro_rules! static_global_id {
-	($name:ident, $begin:literal) => {
-		static $name: std::sync::LazyLock<$crate::util::GlobalID> =
-			std::sync::LazyLock::new(|| $crate::util::GlobalID::new($begin));
-	};
-}
+pub static GLOBAL_ID: LazyLock<GlobalID> = LazyLock::new(GlobalID::new);
 
 pub struct GlobalID {
 	inner: AtomicUsize,
 }
 
 impl GlobalID {
-	pub fn new(begin: usize) -> Self {
+	pub fn new() -> Self {
 		Self {
-			inner: AtomicUsize::new(begin),
+			inner: AtomicUsize::new(1),
 		}
 	}
 

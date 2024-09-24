@@ -1,14 +1,16 @@
-use egui::{CentralPanel, Context, FontId, Margin, ScrollArea, TextEdit, Ui};
+use egui::{
+	Button, CentralPanel, Context, Margin, ScrollArea, Spinner, TextEdit, Ui,
+};
 
 use super::{
 	common::{
-		pretty_btn_shortcut, reset_btn_shortcut, save_btn_shortcut,
+		format_btn_shortcut, reset_btn_shortcut, save_btn_shortcut,
 		set_button_padding,
 	},
 	component::{div, input},
 	new_item::new_item_window,
 };
-use crate::core::{Event, Hed};
+use crate::core::{Event, Hed, ViewKind};
 
 pub fn editor(ctx: &Context, hed: &mut Hed) {
 	CentralPanel::default().show(ctx, |ui| {
@@ -17,57 +19,49 @@ pub fn editor(ctx: &Context, hed: &mut Hed) {
 }
 
 fn panel_content(ui: &mut Ui, hed: &mut Hed) {
-	if hed.profiles_loading {
+	if hed.sys_hosts_loading {
+		ui.centered_and_justified(|ui| {
+			ui.add(Spinner::new().size(30.0));
+		});
 		return;
 	}
 
-	if hed.view_kind.is_options() {
-		options_view(ui, hed);
-	} else if hed.view_kind.is_text() {
-		let Some(profile) = hed.get_selected_profile_mut() else {
-			return;
-		};
-		ScrollArea::vertical().show(ui, |ui| {
-			ui.centered_and_justified(|ui| {
-				let output =
-					TextEdit::multiline(&mut profile.hosts_info_draft.content)
-						.code_editor()
-						.font(FontId::monospace(16.0))
-						.show(ui);
+	if !hed.parse_sys_hosts_err.is_empty() {
+		ui.centered_and_justified(|ui| {
+			ui.heading(&hed.parse_sys_hosts_err);
+		});
+		return;
+	}
 
-				if output.response.has_focus() {
-					if ui
-						.input_mut(|i| i.consume_shortcut(&save_btn_shortcut()))
-					{
-						profile.save_content();
-					}
+	set_button_padding(ui);
 
-					if ui.input_mut(|i| {
-						i.consume_shortcut(&reset_btn_shortcut())
-					}) {
-						profile.reset_content();
-					}
-
-					if ui.input_mut(|i| {
-						i.consume_shortcut(&pretty_btn_shortcut())
-					}) {
-						profile.pretty();
-					}
-				}
-
-				if output.response.changed() {
-					profile.update_by_content_change();
-				}
-
-				// TODO: text opreation, context menu, syntax highlight
+	if hed.view_all {
+		let width = ui.available_width() - 20.0;
+		ui.horizontal_centered(|ui| {
+			ui.vertical(|ui| {
+				ui.set_width(width / 2.0);
+				options_view(ui, hed);
+			});
+			ui.separator();
+			ui.vertical(|ui| {
+				ui.set_width(width / 2.0);
+				text_view(ui, hed);
 			});
 		});
+		return;
+	}
+
+	match hed.view_kind {
+		ViewKind::Options => {
+			options_view(ui, hed);
+		}
+		ViewKind::Text => {
+			text_view(ui, hed);
+		}
 	}
 }
 
 fn options_view(ui: &mut Ui, hed: &mut Hed) {
-	set_button_padding(ui);
-
 	ui.horizontal(|ui| {
 		ui.set_height(30.0);
 		if ui.button("+ New item").clicked() {
@@ -78,16 +72,9 @@ fn options_view(ui: &mut Ui, hed: &mut Hed) {
 
 	ui.separator();
 
-	let Some(profile) = hed.get_selected_profile() else {
-		return;
-	};
-
-	ScrollArea::vertical().show(ui, |ui| {
-		for ip_hosts in &profile.hosts_info_draft.list {
-			if !ip_hosts.contains(&hed.search_ip_hosts) {
-				continue;
-			}
-			let mut ip = ip_hosts.ip.clone();
+	ScrollArea::vertical()
+		.id_source("options_view")
+		.show(ui, |ui| {
 			div(
 				ui,
 				Margin {
@@ -95,54 +82,114 @@ fn options_view(ui: &mut Ui, hed: &mut Hed) {
 					..Default::default()
 				},
 				|ui| {
-					ui.horizontal(|ui| {
-						ui.vertical(|ui| {
-							ui.add_space(8.0);
-							ui.horizontal(|ui| {
-								ui.menu_button("⛭", |ui| {
-									if ui.button("Add host").clicked() {
-										//
-									}
-									if ui.button("Enable").clicked() {
-										//
-									}
-									if ui.button("Delete").clicked() {
-										//
+					for item in &hed.hosts_info_draft.list {
+						if !item.contains(&hed.search_ip_hosts) {
+							continue;
+						}
+						ui.horizontal(|ui| {
+							ui.vertical(|ui| {
+								ui.add_space(8.0);
+								ui.horizontal(|ui| {
+									ui.menu_button("⛭", |ui| {
+										if ui.button("Add host").clicked() {
+											//
+										}
+										if ui.button("Delete").clicked() {
+											//
+										}
+									});
+									let mut ip = item.ip.clone();
+									let input =
+										ui.add(input(&mut ip, "ip", false));
+									if input.changed() {
+										hed.send_event(Event::EditItemIp(
+											item.id, ip,
+										));
 									}
 								});
-								ui.add(input(&mut ip, "ip", false));
+							});
+							ui.horizontal_wrapped(|ui| {
+								for host in &item.hosts {
+									let btn = if host.enabled {
+										ui.selectable_label(true, &host.name)
+									} else {
+										ui.button(&host.name)
+									};
+									if btn.clicked() {
+										hed.send_event(
+											Event::ToggleHostEnable(
+												item.id, host.id,
+											),
+										);
+									}
+									btn.context_menu(|ui| {
+										set_button_padding(ui);
+										if ui.button("Edit").clicked() {
+											ui.close_menu();
+										}
+										if ui.button("Delete").clicked() {
+											ui.close_menu();
+										}
+									});
+								}
 							});
 						});
-						ui.horizontal_wrapped(|ui| {
-							for host in &ip_hosts.hosts {
-								let resp = if host.enabled {
-									ui.selectable_label(true, &host.name)
-								} else {
-									ui.button(&host.name)
-								};
-								if resp.clicked() {
-									hed.send_event(Event::ToggleHostEnable(
-										ip_hosts.id,
-										host.id,
-									));
-								}
-								resp.context_menu(|ui| {
-									if ui.button("Edit").clicked() {
-										//
-									}
-									if ui.button("Delete").clicked() {
-										//
-									}
-								});
-							}
-						});
-					});
+						ui.separator();
+					}
 				},
 			);
+		});
 
-			ui.separator();
+	new_item_window(ui, hed);
+}
+
+fn text_view(ui: &mut Ui, hed: &mut Hed) {
+	ui.horizontal(|ui| {
+		ui.set_height(30.0);
+		if ui
+			.add(Button::new("Fromat").shortcut_text(
+				ui.ctx().format_shortcut(&format_btn_shortcut()),
+			))
+			.clicked()
+		{
+			hed.update_content();
 		}
 	});
 
-	new_item_window(ui, hed);
+	ui.separator();
+
+	ScrollArea::vertical()
+		.id_source("text_view")
+		.show(ui, |ui| {
+			ui.centered_and_justified(|ui| {
+				let output =
+					TextEdit::multiline(&mut hed.hosts_info_draft.content)
+						.code_editor()
+						.show(ui);
+
+				if output.response.has_focus() {
+					if ui
+						.input_mut(|i| i.consume_shortcut(&save_btn_shortcut()))
+					{
+						hed.save_hosts();
+					}
+
+					if ui.input_mut(|i| {
+						i.consume_shortcut(&reset_btn_shortcut())
+					}) {
+						hed.reset_hosts();
+					}
+
+					if ui.input_mut(|i| {
+						i.consume_shortcut(&format_btn_shortcut())
+					}) {
+						hed.update_content();
+					}
+				}
+
+				if output.response.changed() {
+					hed.update_list();
+				}
+			});
+		});
 }

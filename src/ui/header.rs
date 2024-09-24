@@ -2,7 +2,7 @@
 use egui::Window;
 use egui::{Align, Context, Layout, TopBottomPanel, Ui, Visuals};
 
-use super::{common::set_button_padding, new_profile::new_profile_window};
+use super::common::set_button_padding;
 use crate::core::Hed;
 
 pub fn header(ctx: &Context, hed: &mut Hed) {
@@ -18,8 +18,6 @@ pub fn header(ctx: &Context, hed: &mut Hed) {
 					dev_window(ctx, ui, hed);
 
 					theme_switch(ctx, ui);
-
-					new_profile_window(ui, hed);
 				});
 			});
 		});
