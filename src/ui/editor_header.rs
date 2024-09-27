@@ -6,16 +6,19 @@ use super::common::{
 use crate::core::{Hed, ViewKind};
 
 pub fn editor_header(ctx: &Context, hed: &mut Hed) {
-	if hed.sys_hosts_loading || !hed.parse_sys_hosts_err.is_empty() {
+	if !hed.os_err.is_empty() {
 		return;
 	}
 
 	TopBottomPanel::top("editor_header")
 		.exact_height(40.0)
 		.show(ctx, |ui| {
-			ui.add_enabled_ui(hed.opened_window.is_none(), |ui| {
-				panel_content(ui, hed);
-			});
+			ui.add_enabled_ui(
+				!hed.sys_hosts_loading && hed.opened_window.is_none(),
+				|ui| {
+					panel_content(ui, hed);
+				},
+			);
 		});
 }
 

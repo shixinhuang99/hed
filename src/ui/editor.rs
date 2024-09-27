@@ -1,6 +1,4 @@
-use egui::{
-	Button, CentralPanel, Context, Margin, ScrollArea, Spinner, TextEdit, Ui,
-};
+use egui::{Button, CentralPanel, Context, Margin, ScrollArea, TextEdit, Ui};
 
 use super::{
 	all_window::{add_hosts_window, edit_host_window, new_item_window},
@@ -14,27 +12,22 @@ use crate::core::{Event, Hed, OpenedWindow, ViewKind};
 
 pub fn editor(ctx: &Context, hed: &mut Hed) {
 	CentralPanel::default().show(ctx, |ui| {
-		ui.add_enabled_ui(hed.opened_window.is_none(), |ui| {
-			panel_content(ui, hed);
-		});
+		if !hed.os_err.is_empty() {
+			ui.centered_and_justified(|ui| {
+				ui.heading(&hed.os_err);
+			});
+			return;
+		}
+		ui.add_enabled_ui(
+			!hed.sys_hosts_loading && hed.opened_window.is_none(),
+			|ui| {
+				panel_content(ui, hed);
+			},
+		);
 	});
 }
 
 fn panel_content(ui: &mut Ui, hed: &mut Hed) {
-	if hed.sys_hosts_loading {
-		ui.centered_and_justified(|ui| {
-			ui.add(Spinner::new().size(30.0));
-		});
-		return;
-	}
-
-	if !hed.parse_sys_hosts_err.is_empty() {
-		ui.centered_and_justified(|ui| {
-			ui.heading(&hed.parse_sys_hosts_err);
-		});
-		return;
-	}
-
 	set_button_padding(ui);
 
 	if hed.view_all {

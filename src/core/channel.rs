@@ -4,13 +4,14 @@ use super::HostsInfo;
 
 pub enum Event {
 	ParseHostsOk(HostsInfo),
-	ParseHostsFail(String),
+	OsErr(String),
 	EditItemIp(usize, String),
 	ToggleHostEnable(usize, usize),
 	DeleteItem(usize),
 	DeleteHost(usize, usize),
 	OpenAddHostsWindow(usize),
 	OpenEditHostWindow(usize, usize),
+	SaveHostsOk,
 }
 
 pub struct Channel {

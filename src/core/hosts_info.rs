@@ -82,6 +82,18 @@ impl HostsInfo {
 			self.list.remove(idx);
 		}
 	}
+
+	pub fn save_to_file(&self, hosts_path: PathBuf) -> Result<()> {
+		let metadata = fs::metadata(&hosts_path)?;
+		let mut permissions = metadata.permissions();
+		if permissions.readonly() {
+			#[allow(clippy::permissions_set_readonly_false)]
+			permissions.set_readonly(false);
+			fs::set_permissions(&hosts_path, permissions)?;
+		}
+		fs::write(&hosts_path, &self.content)?;
+		Ok(())
+	}
 }
 
 fn content_to_lines(s: &str) -> Vec<Line> {

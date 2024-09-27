@@ -16,7 +16,7 @@ pub struct Hed {
 	pub dev_window_open: bool,
 	pub sys_hosts_path: PathBuf,
 	pub sys_hosts_loading: bool,
-	pub parse_sys_hosts_err: String,
+	pub os_err: String,
 	pub hosts_info: HostsInfo,
 	pub hosts_info_draft: HostsInfo,
 	pub view_kind: ViewKind,
@@ -55,8 +55,8 @@ impl Hed {
 				ParseHostsOk(hosts_info) => {
 					self.handle_parse_hosts_ok(hosts_info);
 				}
-				ParseHostsFail(err) => {
-					self.handle_parse_hosts_fail(err);
+				OsErr(err) => {
+					self.handle_os_err(err);
 				}
 				EditItemIp(item_id, ip) => {
 					self.edit_item_ip(item_id, ip);
@@ -76,6 +76,9 @@ impl Hed {
 				OpenEditHostWindow(item_id, host_id) => {
 					self.open_edit_host_window(item_id, host_id);
 				}
+				SaveHostsOk => {
+					self.parse_sys_hosts();
+				}
 			}
 		}
 	}
@@ -85,25 +88,28 @@ impl Hed {
 	}
 
 	fn parse_sys_hosts(&mut self) {
-		let Ok(sys_hosts_path) = get_sys_hosts_path() else {
-			self.parse_sys_hosts_err =
-				"Failed to get the path of system hosts file".to_string();
-			return;
-		};
-		self.sys_hosts_path = sys_hosts_path.clone();
+		if self.sys_hosts_path.to_string_lossy().is_empty() {
+			let Ok(sys_hosts_path) = get_sys_hosts_path() else {
+				self.os_err =
+					"Failed to get the path of system hosts file".to_string();
+				return;
+			};
+			self.sys_hosts_path = sys_hosts_path.clone();
+		}
+		self.sys_hosts_loading = true;
 		let tx = self.channel.tx.clone();
+		let hosts_path = self.sys_hosts_path.clone();
 		thread::spawn(move || -> Result<()> {
-			match HostsInfo::parse_from_file(sys_hosts_path) {
+			match HostsInfo::parse_from_file(hosts_path) {
 				Ok(hosts_info) => {
 					tx.send(Event::ParseHostsOk(hosts_info))?;
 				}
 				Err(err) => {
-					tx.send(Event::ParseHostsFail(err.to_string()))?;
+					tx.send(Event::OsErr(err.to_string()))?;
 				}
 			}
 			Ok(())
 		});
-		self.sys_hosts_loading = true;
 	}
 
 	fn handle_parse_hosts_ok(&mut self, hosts_info: HostsInfo) {
@@ -112,8 +118,8 @@ impl Hed {
 		self.sys_hosts_loading = false;
 	}
 
-	fn handle_parse_hosts_fail(&mut self, err: String) {
-		self.parse_sys_hosts_err = err;
+	fn handle_os_err(&mut self, err: String) {
+		self.os_err = err;
 		self.sys_hosts_loading = false;
 	}
 
@@ -132,7 +138,18 @@ impl Hed {
 	}
 
 	pub fn save_hosts(&mut self) {
-		self.hosts_info.clone_from(&self.hosts_info_draft);
+		self.sys_hosts_loading = true;
+		let tx = self.channel.tx.clone();
+		let hosts_path = self.sys_hosts_path.clone();
+		let hosts_info = self.hosts_info_draft.clone();
+		thread::spawn(move || -> Result<()> {
+			if let Err(err) = hosts_info.save_to_file(hosts_path) {
+				tx.send(Event::OsErr(err.to_string()))?;
+			} else {
+				tx.send(Event::SaveHostsOk)?;
+			}
+			Ok(())
+		});
 	}
 
 	pub fn reset_hosts(&mut self) {
