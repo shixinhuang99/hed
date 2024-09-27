@@ -910,7 +910,6 @@ dependencies = [
  "indexmap",
  "insta",
  "rstest",
- "thiserror",
 ]
 
 [[package]]
