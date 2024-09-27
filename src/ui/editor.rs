@@ -3,18 +3,20 @@ use egui::{
 };
 
 use super::{
+	all_window::{add_hosts_window, edit_host_window, new_item_window},
 	common::{
 		format_btn_shortcut, reset_btn_shortcut, save_btn_shortcut,
 		set_button_padding,
 	},
 	component::{div, input},
-	new_item::new_item_window,
 };
-use crate::core::{Event, Hed, ViewKind};
+use crate::core::{Event, Hed, OpenedWindow, ViewKind};
 
 pub fn editor(ctx: &Context, hed: &mut Hed) {
 	CentralPanel::default().show(ctx, |ui| {
-		panel_content(ui, hed);
+		ui.add_enabled_ui(hed.opened_window.is_none(), |ui| {
+			panel_content(ui, hed);
+		});
 	});
 }
 
@@ -65,7 +67,7 @@ fn options_view(ui: &mut Ui, hed: &mut Hed) {
 	ui.horizontal(|ui| {
 		ui.set_height(30.0);
 		if ui.button("+ New item").clicked() {
-			hed.new_item_window_open = true;
+			hed.set_opened_window(OpenedWindow::NewItem);
 		}
 		ui.add(input(&mut hed.search_ip_hosts, "Search ip, hosts", true));
 	});
@@ -91,11 +93,19 @@ fn options_view(ui: &mut Ui, hed: &mut Hed) {
 								ui.add_space(8.0);
 								ui.horizontal(|ui| {
 									ui.menu_button("⛭", |ui| {
-										if ui.button("Add host").clicked() {
-											//
+										if ui.button("Add hosts").clicked() {
+											hed.send_event(
+												Event::OpenAddHostsWindow(
+													item.id,
+												),
+											);
+											ui.close_menu();
 										}
 										if ui.button("Delete").clicked() {
-											//
+											hed.send_event(Event::DeleteItem(
+												item.id,
+											));
+											ui.close_menu();
 										}
 									});
 									let mut ip = item.ip.clone();
@@ -125,9 +135,17 @@ fn options_view(ui: &mut Ui, hed: &mut Hed) {
 									btn.context_menu(|ui| {
 										set_button_padding(ui);
 										if ui.button("Edit").clicked() {
+											hed.send_event(
+												Event::OpenEditHostWindow(
+													item.id, host.id,
+												),
+											);
 											ui.close_menu();
 										}
 										if ui.button("Delete").clicked() {
+											hed.send_event(Event::DeleteHost(
+												item.id, host.id,
+											));
 											ui.close_menu();
 										}
 									});
@@ -141,6 +159,8 @@ fn options_view(ui: &mut Ui, hed: &mut Hed) {
 		});
 
 	new_item_window(ui, hed);
+	add_hosts_window(ui, hed);
+	edit_host_window(ui, hed);
 }
 
 fn text_view(ui: &mut Ui, hed: &mut Hed) {

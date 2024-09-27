@@ -50,7 +50,7 @@ impl Item {
 		self.hosts = new_hosts;
 	}
 
-	pub fn add(&mut self, hosts: Vec<String>, enabled: bool) {
+	pub fn add_hosts(&mut self, hosts: Vec<String>, enabled: bool) {
 		for name in hosts {
 			self.hosts.push(Host {
 				id: GLOBAL_ID.next(),
@@ -69,5 +69,23 @@ impl Item {
 
 	pub fn validate_ip(&self, ip: &str) -> bool {
 		is_ip(ip)
+	}
+
+	pub fn get_host_mut(&mut self, host_id: usize) -> Option<&mut Host> {
+		self.hosts.iter_mut().find(|host| host.id == host_id)
+	}
+
+	pub fn remove_host(&mut self, host_id: usize) {
+		if let Some(idx) = self.hosts.iter().position(|host| host.id == host_id)
+		{
+			self.hosts.remove(idx);
+		}
+	}
+
+	pub fn rename_host(&mut self, host_id: usize, name: String) {
+		if let Some(host) = self.get_host_mut(host_id) {
+			host.name = name;
+		}
+		self.hosts_dedup();
 	}
 }

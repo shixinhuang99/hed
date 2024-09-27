@@ -5,10 +5,9 @@ use anyhow::Result;
 use super::{
 	channel::{Channel, Event},
 	item_form::ItemForm,
-	view_kind::ViewKind,
 	HostsInfo,
 };
-use crate::util::get_sys_hosts_path;
+use crate::util::{get_sys_hosts_path, StringExt};
 
 #[derive(Default)]
 pub struct Hed {
@@ -23,8 +22,24 @@ pub struct Hed {
 	pub view_kind: ViewKind,
 	pub view_all: bool,
 	pub search_ip_hosts: String,
-	pub new_item_window_open: bool,
 	pub item_form: ItemForm,
+	pub opened_window: Option<OpenedWindow>,
+	selected_item_id: Option<usize>,
+	selected_host_id: Option<usize>,
+}
+
+#[derive(PartialEq, Eq, Default)]
+pub enum ViewKind {
+	#[default]
+	Options,
+	Text,
+}
+
+#[derive(PartialEq, Eq)]
+pub enum OpenedWindow {
+	NewItem,
+	AddHosts,
+	EditHost,
 }
 
 impl Hed {
@@ -44,12 +59,22 @@ impl Hed {
 					self.handle_parse_hosts_fail(err);
 				}
 				EditItemIp(item_id, ip) => {
-					self.handle_edit_item_ip(item_id, ip);
-					self.update_content();
+					self.edit_item_ip(item_id, ip);
 				}
 				ToggleHostEnable(item_id, host_id) => {
-					self.handle_toggle_host_enable(item_id, host_id);
-					self.update_content();
+					self.toggle_host_enable(item_id, host_id);
+				}
+				DeleteItem(item_id) => {
+					self.delete_item(item_id);
+				}
+				DeleteHost(item_id, host_id) => {
+					self.delete_host(item_id, host_id);
+				}
+				OpenAddHostsWindow(item_id) => {
+					self.open_add_hosts_window(item_id);
+				}
+				OpenEditHostWindow(item_id, host_id) => {
+					self.open_edit_host_window(item_id, host_id);
 				}
 			}
 		}
@@ -92,8 +117,8 @@ impl Hed {
 		self.sys_hosts_loading = false;
 	}
 
-	pub fn close_new_item_window(&mut self) {
-		self.new_item_window_open = false;
+	pub fn close_item_form_window(&mut self) {
+		self.opened_window = None;
 		self.item_form.reset();
 	}
 
@@ -102,7 +127,8 @@ impl Hed {
 			return;
 		}
 		self.hosts_info_draft.add_item(&self.item_form);
-		self.close_new_item_window();
+		self.update_content();
+		self.close_item_form_window();
 	}
 
 	pub fn save_hosts(&mut self) {
@@ -125,31 +151,107 @@ impl Hed {
 		self.hosts_info_draft.update_content();
 	}
 
-	fn handle_edit_item_ip(&mut self, item_id: usize, ip: String) {
-		if let Some(item) = self
-			.hosts_info_draft
-			.list
-			.iter_mut()
-			.find(|item| item.id == item_id)
-		{
+	pub fn set_opened_window(&mut self, window: OpenedWindow) {
+		self.opened_window = Some(window);
+	}
+
+	pub fn is_window_open(&self, window: OpenedWindow) -> bool {
+		if let Some(win) = &self.opened_window {
+			return *win == window;
+		}
+		false
+	}
+
+	fn edit_item_ip(&mut self, item_id: usize, ip: String) {
+		if let Some(item) = self.hosts_info_draft.get_item_mut(item_id) {
 			if item.validate_ip(&ip) {
 				item.ip = ip;
 			}
 		}
+		self.update_content();
 	}
 
-	fn handle_toggle_host_enable(&mut self, item_id: usize, host_id: usize) {
-		if let Some(item) = self
-			.hosts_info_draft
-			.list
-			.iter_mut()
-			.find(|item| item.id == item_id)
-		{
-			if let Some(host) =
-				item.hosts.iter_mut().find(|host| host.id == host_id)
-			{
+	fn toggle_host_enable(&mut self, item_id: usize, host_id: usize) {
+		if let Some(item) = self.hosts_info_draft.get_item_mut(item_id) {
+			if let Some(host) = item.get_host_mut(host_id) {
 				host.enabled = !host.enabled;
 			}
 		}
+		self.update_content();
+	}
+
+	fn delete_item(&mut self, item_id: usize) {
+		self.hosts_info_draft.remove_item(item_id);
+		self.update_content();
+	}
+
+	fn delete_host(&mut self, item_id: usize, host_id: usize) {
+		let Some(item) = self.hosts_info_draft.get_item_mut(item_id) else {
+			return;
+		};
+		item.remove_host(host_id);
+		if item.hosts.is_empty() {
+			self.hosts_info_draft.remove_item(item_id);
+		}
+		self.update_content();
+	}
+
+	fn open_add_hosts_window(&mut self, item_id: usize) {
+		self.selected_item_id = Some(item_id);
+		self.set_opened_window(OpenedWindow::AddHosts);
+	}
+
+	pub fn close_add_hosts_window(&mut self) {
+		self.selected_item_id = None;
+		self.close_item_form_window();
+	}
+
+	pub fn add_hosts(&mut self) {
+		if !self.item_form.validate_hosts() {
+			return;
+		}
+		let Some(item_id) = self.selected_item_id else {
+			return;
+		};
+		let Some(item) = self.hosts_info_draft.get_item_mut(item_id) else {
+			return;
+		};
+		item.add_hosts(self.item_form.hosts.to_split_whitespace_vec(), true);
+		self.close_add_hosts_window();
+		self.update_content();
+	}
+
+	fn open_edit_host_window(&mut self, item_id: usize, host_id: usize) {
+		self.selected_item_id = Some(item_id);
+		self.selected_host_id = Some(host_id);
+		if let Some(item) = self.hosts_info_draft.get_item_mut(item_id) {
+			if let Some(host) = item.get_host_mut(host_id) {
+				self.item_form.hosts = host.name.clone();
+			};
+		};
+		self.set_opened_window(OpenedWindow::EditHost);
+	}
+
+	pub fn close_edit_host_window(&mut self) {
+		self.selected_item_id = None;
+		self.selected_host_id = None;
+		self.close_item_form_window();
+	}
+
+	pub fn edit_host(&mut self) {
+		if !self.item_form.validate_hosts() {
+			return;
+		}
+		let (Some(item_id), Some(host_id)) =
+			(self.selected_item_id, self.selected_host_id)
+		else {
+			return;
+		};
+		let Some(item) = self.hosts_info_draft.get_item_mut(item_id) else {
+			return;
+		};
+		item.rename_host(host_id, self.item_form.hosts.clone());
+		self.close_edit_host_window();
+		self.update_content();
 	}
 }

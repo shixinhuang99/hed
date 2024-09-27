@@ -13,7 +13,9 @@ pub fn editor_header(ctx: &Context, hed: &mut Hed) {
 	TopBottomPanel::top("editor_header")
 		.exact_height(40.0)
 		.show(ctx, |ui| {
-			panel_content(ui, hed);
+			ui.add_enabled_ui(hed.opened_window.is_none(), |ui| {
+				panel_content(ui, hed);
+			});
 		});
 }
 

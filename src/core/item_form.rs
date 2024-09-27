@@ -26,6 +26,10 @@ impl ItemForm {
 			self.ip_error = format!("`{}` is not a valid IP address", self.ip);
 			return false;
 		}
+		self.validate_hosts()
+	}
+
+	pub fn validate_hosts(&mut self) -> bool {
 		self.hosts.make_trim();
 		if self.hosts.is_empty() {
 			self.hosts_error = "hosts is empty".to_string();

@@ -5,6 +5,7 @@ use std::{
 };
 
 use anyhow::Result;
+use indexmap::IndexMap;
 
 use super::{item::Item, item_form::ItemForm};
 use crate::util::{is_ip, StringExt};
@@ -15,11 +16,11 @@ const HED_COMMENT_MARK: &str = "#(hed)";
 pub struct HostsInfo {
 	pub content: String,
 	pub list: Vec<Item>,
-	lines: Vec<LineKind>,
+	lines: Vec<Line>,
 }
 
 #[derive(Debug, Clone)]
-pub enum LineKind {
+pub enum Line {
 	Valid(ValidLine),
 	Comment(String),
 	Empty,
@@ -61,7 +62,7 @@ impl HostsInfo {
 	pub fn add_item(&mut self, form: &ItemForm) {
 		if let Some(item) = self.list.iter_mut().find(|item| item.ip == form.ip)
 		{
-			item.add(form.hosts.to_split_whitespace_vec(), true);
+			item.add_hosts(form.hosts.to_split_whitespace_vec(), true);
 		} else {
 			self.list.push(Item::new(
 				&form.ip,
@@ -70,40 +71,51 @@ impl HostsInfo {
 			));
 		}
 	}
+
+	pub fn get_item_mut(&mut self, item_id: usize) -> Option<&mut Item> {
+		self.list.iter_mut().find(|item| item.id == item_id)
+	}
+
+	pub fn remove_item(&mut self, item_id: usize) {
+		if let Some(idx) = self.list.iter().position(|item| item.id == item_id)
+		{
+			self.list.remove(idx);
+		}
+	}
 }
 
-fn content_to_lines(s: &str) -> Vec<LineKind> {
+fn content_to_lines(s: &str) -> Vec<Line> {
 	let mut lines = vec![];
 
 	for l in s.lines() {
 		let line = l.trim().to_string();
 
 		if line.is_empty() {
-			lines.push(LineKind::Empty);
+			lines.push(Line::Empty);
 			continue;
 		}
 
 		if line.starts_with('#') && !line.starts_with(HED_COMMENT_MARK) {
-			lines.push(LineKind::Comment(line));
+			lines.push(Line::Comment(line));
 			continue;
 		}
 
 		if let Some(valid_line) = parse_valid_line(&line) {
-			lines.push(LineKind::Valid(valid_line));
+			lines.push(Line::Valid(valid_line));
 		} else {
-			lines.push(LineKind::Other(line));
+			lines.push(Line::Other(line));
 		}
 	}
 
 	lines
 }
 
-fn lines_to_content(lines: &[LineKind], is_win: bool) -> String {
+fn lines_to_content(lines: &[Line], is_win: bool) -> String {
 	let mut text_lines: Vec<String> = vec![];
 
 	for line in lines {
 		let text = match line {
-			LineKind::Valid(valid_line) => {
+			Line::Valid(valid_line) => {
 				let mut vs = vec![];
 				if !valid_line.enabled {
 					vs.push(HED_COMMENT_MARK.to_string());
@@ -115,9 +127,9 @@ fn lines_to_content(lines: &[LineKind], is_win: bool) -> String {
 				}
 				vs.join(" ")
 			}
-			LineKind::Comment(s) => s.clone(),
-			LineKind::Other(s) => s.clone(),
-			LineKind::Empty => String::new(),
+			Line::Comment(s) => s.clone(),
+			Line::Other(s) => s.clone(),
+			Line::Empty => String::new(),
 		};
 
 		text_lines.push(text);
@@ -135,6 +147,7 @@ fn lines_to_content(lines: &[LineKind], is_win: bool) -> String {
 fn parse_valid_line(s: &str) -> Option<ValidLine> {
 	let (striped_s, enabled) = strip_hed_comment(s);
 	let (ip_hosts, comment) = split_ip_hosts_comment(striped_s);
+
 	if let Some((ip, hosts)) = split_ip_hosts(ip_hosts) {
 		Some(ValidLine {
 			ip,
@@ -179,82 +192,81 @@ fn split_ip_hosts(s: &str) -> Option<(String, Vec<String>)> {
 	None
 }
 
-fn lines_to_list(lines: &[LineKind]) -> Vec<Item> {
-	let mut list: Vec<Item> = vec![];
-
-	let mut ip_index_map: HashMap<&str, usize> = HashMap::new();
+fn lines_to_list(lines: &[Line]) -> Vec<Item> {
+	let mut item_map: IndexMap<String, Item> = IndexMap::new();
 
 	for line in lines {
-		if let LineKind::Valid(valid_line) = line {
-			if let Some(idx) = ip_index_map.get(valid_line.ip.as_str()) {
-				if let Some(item) = list.get_mut(*idx) {
-					item.add(valid_line.hosts.clone(), valid_line.enabled);
-				}
+		if let Line::Valid(valid_line) = line {
+			if let Some(item) = item_map.get_mut(&valid_line.ip) {
+				item.add_hosts(valid_line.hosts.clone(), valid_line.enabled);
 			} else {
-				list.push(Item::new(
-					&valid_line.ip,
-					valid_line.hosts.clone(),
-					valid_line.enabled,
-				));
-				ip_index_map.insert(&valid_line.ip, list.len() - 1);
+				item_map.insert(
+					valid_line.ip.clone(),
+					Item::new(
+						&valid_line.ip,
+						valid_line.hosts.clone(),
+						valid_line.enabled,
+					),
+				);
 			}
 		}
 	}
 
-	list
+	item_map.into_values().collect()
 }
 
-fn new_lines_by_list(lines: &[LineKind], list: &[Item]) -> Vec<LineKind> {
+fn gen_key(ip: &str, enabled: bool) -> String {
+	format!("{}{}", ip, enabled)
+}
+
+fn remove_lines_by_indices(
+	lines: Vec<Line>,
+	indices: &mut HashSet<usize>,
+) -> Vec<Line> {
+	let mut new = vec![];
+	for (i, line) in lines.into_iter().enumerate() {
+		if !indices.contains(&i) {
+			new.push(line);
+		}
+	}
+	indices.clear();
+	new
+}
+
+fn new_lines_by_list(lines: &[Line], list: &[Item]) -> Vec<Line> {
+	let mut lines = lines.to_vec();
+
+	let mut indices_to_removed: HashSet<usize> = HashSet::new();
+
 	let mut ip_enabled_set: HashSet<String> = HashSet::new();
-	let mut should_be_removed: HashSet<usize> = HashSet::new();
-	let mut is_previous_line_empty = if !lines.is_empty() {
-		matches!(lines[0], LineKind::Empty)
-	} else {
-		false
-	};
 
 	for (i, line) in lines.iter().enumerate() {
-		match line {
-			LineKind::Valid(valid_line) => {
-				let key = format!("{}{}", valid_line.ip, valid_line.enabled);
-				if ip_enabled_set.contains(&key) {
-					should_be_removed.insert(i);
-				} else {
-					ip_enabled_set.insert(key);
-				}
+		if let Line::Valid(valid_line) = line {
+			let key = gen_key(&valid_line.ip, valid_line.enabled);
+			if ip_enabled_set.contains(&key) {
+				indices_to_removed.insert(i);
+			} else {
+				ip_enabled_set.insert(key);
 			}
-			LineKind::Empty => {
-				if is_previous_line_empty {
-					should_be_removed.insert(i);
-				}
-			}
-			_ => (),
-		}
-
-		if !should_be_removed.contains(&i) {
-			is_previous_line_empty = matches!(line, LineKind::Empty);
 		}
 	}
 
-	let mut new_lines: Vec<LineKind> = vec![];
+	lines = remove_lines_by_indices(lines, &mut indices_to_removed);
+
+	let mut line_idx_map: HashMap<String, usize> = HashMap::new();
 
 	for (i, line) in lines.iter().enumerate() {
-		if !should_be_removed.contains(&i) {
-			new_lines.push(line.clone());
+		if let Line::Valid(valid_line) = line {
+			line_idx_map.insert(gen_key(&valid_line.ip, valid_line.enabled), i);
 		}
 	}
 
-	let mut ip_index_map: HashMap<String, usize> = HashMap::new();
-
-	for (i, line) in new_lines.iter().enumerate() {
-		if let LineKind::Valid(valid_line) = line {
-			ip_index_map.insert(valid_line.ip.clone(), i);
-		}
-	}
+	let mut list_ip_set: HashSet<&str> = HashSet::new();
 
 	for item in list {
 		let mut enabled_hosts = vec![];
 		let mut disabled_hosts = vec![];
+
 		for host in &item.hosts {
 			if host.enabled {
 				enabled_hosts.push(host.name.clone());
@@ -263,42 +275,71 @@ fn new_lines_by_list(lines: &[LineKind], list: &[Item]) -> Vec<LineKind> {
 			}
 		}
 
-		if let Some(idx) = ip_index_map.get(&item.ip) {
-			if let Some(LineKind::Valid(valid_line)) = new_lines.get_mut(*idx) {
-				valid_line.hosts = if valid_line.enabled {
-					enabled_hosts
-				} else {
-					disabled_hosts
-				};
+		if let Some(idx) = line_idx_map.get(&gen_key(&item.ip, true)) {
+			if let Some(Line::Valid(valid_line)) = lines.get_mut(*idx) {
+				valid_line.hosts = enabled_hosts;
 			}
 		} else {
-			if !enabled_hosts.is_empty() {
-				new_lines.push(LineKind::Valid(ValidLine {
-					ip: item.ip.clone(),
-					hosts: enabled_hosts,
-					comment: None,
-					enabled: true,
-				}));
+			lines.push(Line::Valid(ValidLine {
+				ip: item.ip.clone(),
+				hosts: enabled_hosts,
+				comment: None,
+				enabled: true,
+			}));
+		}
+
+		if let Some(idx) = line_idx_map.get(&gen_key(&item.ip, false)) {
+			if let Some(Line::Valid(valid_line)) = lines.get_mut(*idx) {
+				valid_line.hosts = disabled_hosts;
 			}
-			if !disabled_hosts.is_empty() {
-				new_lines.push(LineKind::Valid(ValidLine {
-					ip: item.ip.clone(),
-					hosts: disabled_hosts,
-					comment: None,
-					enabled: false,
-				}));
+		} else {
+			lines.push(Line::Valid(ValidLine {
+				ip: item.ip.clone(),
+				hosts: disabled_hosts,
+				comment: None,
+				enabled: false,
+			}));
+		}
+
+		list_ip_set.insert(&item.ip);
+	}
+
+	for (i, line) in lines.iter().enumerate() {
+		if let Line::Valid(valid_line) = line {
+			if valid_line.hosts.is_empty()
+				|| !list_ip_set.contains(valid_line.ip.as_str())
+			{
+				indices_to_removed.insert(i);
 			}
 		}
 	}
 
-	if new_lines
-		.last()
-		.is_some_and(|line| !matches!(line, LineKind::Empty))
-	{
-		new_lines.push(LineKind::Empty);
+	lines = remove_lines_by_indices(lines, &mut indices_to_removed);
+
+	let mut is_previous_line_empty = if lines.is_empty() {
+		false
+	} else {
+		matches!(lines[0], Line::Empty)
+	};
+
+	for (i, line) in lines.iter().enumerate() {
+		let is_line_empty = matches!(line, Line::Empty);
+		if is_line_empty && is_previous_line_empty {
+			indices_to_removed.insert(i);
+		}
+		is_previous_line_empty = is_line_empty;
 	}
 
-	new_lines
+	lines = remove_lines_by_indices(lines, &mut indices_to_removed);
+
+	if lines
+		.last()
+		.is_some_and(|line| !matches!(line, Line::Empty))
+	{
+		lines.push(Line::Empty);
+	}
+
+	lines
 }
 
 #[cfg(test)]
@@ -363,7 +404,7 @@ mod tests {
 		let mut list = lines_to_list(&lines);
 
 		for (i, hosts) in list.iter_mut().enumerate() {
-			hosts.add(vec![format!("foo{}.com", i)], false);
+			hosts.add_hosts(vec![format!("foo{}.com", i)], false);
 		}
 
 		lines = new_lines_by_list(&lines, &list);

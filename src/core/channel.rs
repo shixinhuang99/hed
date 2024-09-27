@@ -7,6 +7,10 @@ pub enum Event {
 	ParseHostsFail(String),
 	EditItemIp(usize, String),
 	ToggleHostEnable(usize, usize),
+	DeleteItem(usize),
+	DeleteHost(usize, usize),
+	OpenAddHostsWindow(usize),
+	OpenEditHostWindow(usize, usize),
 }
 
 pub struct Channel {
