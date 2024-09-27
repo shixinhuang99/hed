@@ -100,6 +100,22 @@ fn options_view(ui: &mut Ui, hed: &mut Hed) {
 											));
 											ui.close_menu();
 										}
+										if ui.button("Enable all").clicked() {
+											hed.send_event(
+												Event::ToggleAllHostEnable(
+													item.id, true,
+												),
+											);
+											ui.close_menu();
+										}
+										if ui.button("Disable all").clicked() {
+											hed.send_event(
+												Event::ToggleAllHostEnable(
+													item.id, false,
+												),
+											);
+											ui.close_menu();
+										}
 									});
 									let mut ip = item.ip.clone();
 									let input =

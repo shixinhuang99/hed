@@ -79,6 +79,9 @@ impl Hed {
 				SaveHostsOk => {
 					self.parse_sys_hosts();
 				}
+				ToggleAllHostEnable(item_id, enabled) => {
+					self.toggle_all_host_enable(item_id, enabled);
+				}
 			}
 		}
 	}
@@ -269,6 +272,15 @@ impl Hed {
 		};
 		item.rename_host(host_id, self.item_form.hosts.clone());
 		self.close_edit_host_window();
+		self.update_content();
+	}
+
+	fn toggle_all_host_enable(&mut self, item_id: usize, enabled: bool) {
+		if let Some(item) = self.hosts_info_draft.get_item_mut(item_id) {
+			for host in &mut item.hosts {
+				host.enabled = enabled;
+			}
+		}
 		self.update_content();
 	}
 }

@@ -12,6 +12,7 @@ pub enum Event {
 	OpenAddHostsWindow(usize),
 	OpenEditHostWindow(usize, usize),
 	SaveHostsOk,
+	ToggleAllHostEnable(usize, bool),
 }
 
 pub struct Channel {
