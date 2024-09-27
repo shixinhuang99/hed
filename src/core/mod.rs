@@ -1,8 +1,9 @@
+mod channel;
 mod hed;
 mod hosts_info;
-mod profile;
-pub mod task_handler;
+mod item;
+mod item_form;
 
-pub use hed::Hed;
-pub use hosts_info::HostsInfo;
-pub use profile::Profile;
+pub use channel::Event;
+pub use hed::{Hed, OpenedWindow, ViewKind};
+use hosts_info::HostsInfo;
