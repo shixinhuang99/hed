@@ -58,4 +58,25 @@ expression: lines
         },
     ),
     Empty,
+    Valid(
+        ValidLine {
+            ip: "172.16.254.1",
+            hosts: [
+                "foo0.com",
+            ],
+            comment: None,
+            enabled: false,
+        },
+    ),
+    Valid(
+        ValidLine {
+            ip: "2402:1200:4f00:1234:0000:5678:9abc:def0",
+            hosts: [
+                "foo1.com",
+            ],
+            comment: None,
+            enabled: false,
+        },
+    ),
+    Empty,
 ]

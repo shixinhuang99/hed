@@ -5,7 +5,7 @@ use egui::{Align, Context, Layout, TopBottomPanel, Ui, Visuals};
 use super::common::set_button_padding;
 use crate::core::Hed;
 
-pub fn header(ctx: &Context, hed: &mut Hed) {
+pub fn header(ctx: &Context, _hed: &mut Hed) {
 	TopBottomPanel::top("header")
 		.exact_height(48.0)
 		.show(ctx, |ui| {
@@ -15,7 +15,7 @@ pub fn header(ctx: &Context, hed: &mut Hed) {
 					set_button_padding(ui);
 
 					#[cfg(feature = "_dev")]
-					dev_window(ctx, ui, hed);
+					dev_window(ctx, ui, _hed);
 
 					theme_switch(ctx, ui);
 				});
