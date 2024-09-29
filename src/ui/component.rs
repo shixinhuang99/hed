@@ -1,6 +1,6 @@
 use egui::{
-	Align, Align2, FontId, Frame, Grid, Key, Layout, Margin, Response,
-	RichText, ScrollArea, TextEdit, Ui, Window,
+	Align, Align2, Frame, Grid, Key, Layout, Margin, Response, RichText,
+	ScrollArea, TextEdit, Ui, Window,
 };
 
 pub fn div(
@@ -98,8 +98,7 @@ pub fn input<'a>(
 	let mut te = TextEdit::singleline(value)
 		.vertical_align(Align::Center)
 		.margin(Margin::symmetric(6.0, 4.0))
-		.hint_text(placeholder)
-		.font(FontId::proportional(15.0));
+		.hint_text(placeholder);
 
 	if full {
 		te = te.desired_width(f32::INFINITY);
@@ -115,7 +114,6 @@ pub fn text_area<'a>(
 	TextEdit::multiline(value)
 		.margin(Margin::symmetric(6.0, 4.0))
 		.hint_text(placeholder)
-		.font(FontId::proportional(15.0))
 }
 
 pub fn show_error_tooltip(response: Response, error: &mut String) {

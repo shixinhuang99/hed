@@ -15,9 +15,12 @@ fn run() -> Result<()> {
 	eframe::run_native(
 		APP_NAME,
 		create_native_options(),
-		Box::new(|_| {
-			let mut hed = Hed::default();
+		Box::new(|cc| {
+			#[cfg(target_os = "windows")]
+			set_fonts(cc);
+			set_font_style(cc);
 
+			let mut hed = Hed::default();
 			hed.init();
 
 			Ok(Box::new(hed))
@@ -51,4 +54,50 @@ fn create_wgpu_options() -> egui_wgpu::WgpuConfiguration {
 		power_preference: egui_wgpu::wgpu::PowerPreference::LowPower,
 		..Default::default()
 	}
+}
+
+#[cfg(target_os = "windows")]
+fn set_fonts(cc: &eframe::CreationContext) {
+	use std::fs;
+
+	use egui::{FontData, FontDefinitions, FontFamily};
+
+	let Ok(raw_font_data) = fs::read("C:\\Windows\\Fonts\\simhei.ttf") else {
+		return;
+	};
+
+	let font_name = "simhei".to_string();
+	let mut fonts = FontDefinitions::default();
+	let font_data = FontData::from_owned(raw_font_data);
+
+	fonts.font_data.insert(font_name.clone(), font_data);
+
+	fonts
+		.families
+		.entry(FontFamily::Proportional)
+		.or_default()
+		.push(font_name.clone());
+
+	fonts
+		.families
+		.entry(FontFamily::Monospace)
+		.or_default()
+		.push(font_name);
+
+	cc.egui_ctx.set_fonts(fonts);
+}
+
+fn set_font_style(cc: &eframe::CreationContext) {
+	use egui::TextStyle;
+
+	cc.egui_ctx.style_mut(|style| {
+		for (text_style, font) in &mut style.text_styles {
+			if matches!(
+				text_style,
+				TextStyle::Body | TextStyle::Button | TextStyle::Monospace
+			) {
+				font.size = 16.0;
+			}
+		}
+	});
 }

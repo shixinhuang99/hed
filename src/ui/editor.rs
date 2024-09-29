@@ -86,6 +86,8 @@ fn options_view(ui: &mut Ui, hed: &mut Hed) {
 								ui.add_space(8.0);
 								ui.horizontal(|ui| {
 									ui.menu_button("⛭", |ui| {
+										set_button_padding(ui);
+
 										if ui.button("Add hosts").clicked() {
 											hed.send_event(
 												Event::OpenAddHostsWindow(
