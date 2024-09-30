@@ -1,16 +1,34 @@
 #[cfg(feature = "_dev")]
 use egui::Window;
-use egui::{Align, Context, Layout, TopBottomPanel, Ui, Visuals};
+use egui::{
+	special_emojis, Align, Context, FontId, Layout, RichText, TopBottomPanel,
+	Ui, Visuals,
+};
 
 use super::common::set_button_padding;
-use crate::core::Hed;
+use crate::{
+	consts::{APP_NAME, APP_REPOSITORY, APP_VER},
+	core::Hed,
+};
 
 pub fn header(ctx: &Context, _hed: &mut Hed) {
 	TopBottomPanel::top("header")
 		.exact_height(48.0)
 		.show(ctx, |ui| {
 			ui.horizontal_centered(|ui| {
-				ui.heading("Hed");
+				ui.heading(first_uppercase(APP_NAME));
+				ui.label(
+					RichText::new(APP_VER).font(FontId::proportional(14.0)),
+				);
+				ui.hyperlink_to(
+					RichText::new(format!(
+						"{} {} on GitHub",
+						special_emojis::GITHUB,
+						APP_NAME
+					))
+					.font(FontId::proportional(14.0)),
+					APP_REPOSITORY,
+				);
 				ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
 					set_button_padding(ui);
 
@@ -44,4 +62,12 @@ fn theme_switch(ctx: &Context, ui: &mut Ui) {
 	if ui.selectable_label(dark_mode, "🌙 Dark").clicked() {
 		ctx.set_visuals(Visuals::dark());
 	}
+}
+
+fn first_uppercase(s: &str) -> String {
+	let mut s = s.to_string();
+	if let Some(first) = s.get_mut(0..1) {
+		first.make_ascii_uppercase();
+	}
+	s
 }
