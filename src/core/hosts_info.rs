@@ -91,7 +91,12 @@ impl HostsInfo {
 			permissions.set_readonly(false);
 			fs::set_permissions(&hosts_path, permissions)?;
 		}
-		fs::write(&hosts_path, &self.content)?;
+
+		let tmp_file = std::env::temp_dir().join("hed_tmp");
+		fs::write(&tmp_file, &self.content)?;
+		fs::copy(&tmp_file, hosts_path)?;
+		fs::remove_file(&tmp_file)?;
+
 		Ok(())
 	}
 }
