@@ -70,6 +70,10 @@ fn panel_content(ui: &mut Ui, hed: &mut Hed) {
 			{
 				hed.save_hosts();
 			};
+
+			if ui.button("↺").clicked() {
+				hed.parse_sys_hosts();
+			}
 		});
 	});
 }

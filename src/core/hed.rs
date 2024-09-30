@@ -90,7 +90,7 @@ impl Hed {
 		self.channel.send(event);
 	}
 
-	fn parse_sys_hosts(&mut self) {
+	pub fn parse_sys_hosts(&mut self) {
 		if self.sys_hosts_path.to_string_lossy().is_empty() {
 			let Ok(sys_hosts_path) = get_sys_hosts_path() else {
 				self.os_err =
