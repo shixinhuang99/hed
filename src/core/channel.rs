@@ -1,17 +1,39 @@
-use std::path::PathBuf;
-
-use tokio::sync::mpsc;
+use std::sync::mpsc;
 
 use super::HostsInfo;
 
-pub type Sender = mpsc::Sender<Response>;
-pub type Receiver = mpsc::Receiver<Response>;
-
-pub enum Invoke {
-	Parse(PathBuf),
+pub enum Event {
+	ParseHostsOk(HostsInfo),
+	OsErr(String),
+	EditItemIp(usize, String),
+	ToggleHostEnable(usize, usize),
+	DeleteItem(usize),
+	DeleteHost(usize, usize),
+	OpenAddHostsWindow(usize),
+	OpenEditHostWindow(usize, usize),
+	SaveHostsOk,
+	ToggleAllHostEnable(usize, bool),
 }
 
-pub enum Response {
-	Parse(HostsInfo),
-	ParseFail(String),
+pub struct Channel {
+	pub tx: mpsc::Sender<Event>,
+	rx: mpsc::Receiver<Event>,
+}
+
+impl Default for Channel {
+	fn default() -> Self {
+		let (tx, rx) = mpsc::channel();
+
+		Self { tx, rx }
+	}
+}
+
+impl Channel {
+	pub fn send(&self, event: Event) {
+		self.tx.send(event).unwrap();
+	}
+
+	pub fn recv(&self) -> Option<Event> {
+		self.rx.try_recv().ok()
+	}
 }

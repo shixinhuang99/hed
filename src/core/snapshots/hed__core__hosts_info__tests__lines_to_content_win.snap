@@ -1,0 +1,5 @@
+---
+source: src/core/hosts_info.rs
+expression: new_content_win
+---
+"\r\n\r\n\r\n\r\n#    comment\r\n\r\n172.16.254.1 a.com c.com c.com # ##     comment\r\n\r\n\r\n\r\n\r\n\r\n172.16.254.1 d.com c.com\r\n\r\n2402:1200:4f00:1234:0000:5678:9abc:def0 b.com\r\n\r\n#   中文内容\r\n127.0.0.1 e.com\r\n#(hed) 127.0.0.1 f.com\r\n\r\n\r\n"

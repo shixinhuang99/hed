@@ -1,5 +1,6 @@
 [package]
 name = "hed"
+version = "0.1.0"
 edition = "2021"
 authors = ["shixinhuang99 <shixinhuang99@gmail.com>"]
 description = "hosts file editor"
@@ -24,17 +25,10 @@ eframe = { version = "0.28.1", default-features = false, features = [
 ] }
 egui = "0.28.1"
 indexmap = "2.5.0"
+
+[dev-dependencies]
 insta = "1.39.0"
-test-case = "3.3.1"
-thiserror = "1.0.63"
-tokio = { version = "1.40.0", features = [
-  "rt",
-  "rt-multi-thread",
-  "time",
-  "macros",
-  "sync",
-  "fs",
-] }
+rstest = "0.22.0"
 
 [features]
 _dev = []
