@@ -1,0 +1,54 @@
+---
+source: src/core/hosts_info.rs
+expression: list
+---
+[
+    Item {
+        id: 0,
+        ip: "172.16.254.1",
+        hosts: [
+            Host {
+                id: 0,
+                name: "a.com",
+                enabled: true,
+            },
+            Host {
+                id: 0,
+                name: "c.com",
+                enabled: true,
+            },
+            Host {
+                id: 0,
+                name: "d.com",
+                enabled: true,
+            },
+        ],
+    },
+    Item {
+        id: 0,
+        ip: "2402:1200:4f00:1234:0000:5678:9abc:def0",
+        hosts: [
+            Host {
+                id: 0,
+                name: "b.com",
+                enabled: true,
+            },
+        ],
+    },
+    Item {
+        id: 0,
+        ip: "127.0.0.1",
+        hosts: [
+            Host {
+                id: 0,
+                name: "e.com",
+                enabled: true,
+            },
+            Host {
+                id: 0,
+                name: "f.com",
+                enabled: false,
+            },
+        ],
+    },
+]

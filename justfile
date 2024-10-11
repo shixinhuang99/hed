@@ -10,6 +10,7 @@ show-toolchain:
 	cargo -V
 	cargo fmt --version
 	cargo clippy -V
+	just --version
 
 fmt:
 	cargo fmt
@@ -36,3 +37,9 @@ push-tag tag:
 
 run:
 	cargo run -F _dev
+
+ta:
+	INSTA_UPDATE=always cargo test
+
+tu: 
+	INSTA_UPDATE=unseen cargo test

@@ -1,16 +1,22 @@
-# something
-# something
-# something
-# something
-# something
-# something
-# something
-# something
-               172.16.254.1     a.com         c.com   #          comment
-               
-      172.16.254.1     d.com         c.com
-      
-           2402:1200:4f00:1234:0000:5678:9abc:def0 b.com             
 
-# 中文内容
-127.0.0.1 e.com
+
+
+
+   #    comment  
+
+               172.16.254.1     a.com    c.com     c.com   #     ##     comment
+
+
+
+        
+               
+      172.16.254.1     d.com         c.com  
+      
+           2402:1200:4f00:1234:0000:5678:9abc:def0   b.com             
+
+         #   中文内容                    
+127.0.0.1 e.com  
+#(hed) 127.0.0.1 f.com 
+
+
+

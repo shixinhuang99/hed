@@ -1,0 +1,82 @@
+---
+source: src/core/hosts_info.rs
+expression: lines
+---
+[
+    Empty,
+    Empty,
+    Empty,
+    Empty,
+    Comment(
+        "#    comment",
+    ),
+    Empty,
+    Valid(
+        ValidLine {
+            ip: "172.16.254.1",
+            hosts: [
+                "a.com",
+                "c.com",
+                "c.com",
+            ],
+            comment: Some(
+                "##     comment",
+            ),
+            enabled: true,
+        },
+    ),
+    Empty,
+    Empty,
+    Empty,
+    Empty,
+    Empty,
+    Valid(
+        ValidLine {
+            ip: "172.16.254.1",
+            hosts: [
+                "d.com",
+                "c.com",
+            ],
+            comment: None,
+            enabled: true,
+        },
+    ),
+    Empty,
+    Valid(
+        ValidLine {
+            ip: "2402:1200:4f00:1234:0000:5678:9abc:def0",
+            hosts: [
+                "b.com",
+            ],
+            comment: None,
+            enabled: true,
+        },
+    ),
+    Empty,
+    Comment(
+        "#   中文内容",
+    ),
+    Valid(
+        ValidLine {
+            ip: "127.0.0.1",
+            hosts: [
+                "e.com",
+            ],
+            comment: None,
+            enabled: true,
+        },
+    ),
+    Valid(
+        ValidLine {
+            ip: "127.0.0.1",
+            hosts: [
+                "f.com",
+            ],
+            comment: None,
+            enabled: false,
+        },
+    ),
+    Empty,
+    Empty,
+    Empty,
+]
