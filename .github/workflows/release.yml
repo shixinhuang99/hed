@@ -42,11 +42,11 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: |
           cargo install cargo-bundle
-          cargo bundle --release --target x86_64-apple-darwin --format osx
+          cargo bundle --release --format osx
 
       - name: Build for windows
         if: matrix.os == 'windows-latest'
-        run: cargo build --release --target x86_64-pc-windows-msvc
+        run: cargo build --release
 
       - name: Upload for macos
         if: matrix.os == 'macos-latest'
