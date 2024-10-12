@@ -54,10 +54,7 @@ jobs:
         run: |
           cargo install cargo-bundle
           cargo bundle --release --format osx
-
-      - name: Build for windows
-        if: matrix.os == 'windows-latest'
-        run: cargo build --release
+          zip -r Hed.app.zip ./target/release/bundle/osx/Hed.app
 
       - name: Upload for macos
         if: matrix.os == 'macos-latest'
@@ -66,9 +63,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ./target/release/bundle/osx/Hed.app
-          asset_name: Hed.app
-          asset_content_type: application/octet-stream
+          asset_path: ./Hed.app.zip
+          asset_name: Hed.app.zip
+          asset_content_type: application/zip
+
+      - name: Build for windows
+        if: matrix.os == 'windows-latest'
+        run: cargo build --release
 
       - name: Upload for windows
         if: matrix.os == 'windows-latest'
