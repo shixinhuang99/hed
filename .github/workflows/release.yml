@@ -42,7 +42,7 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-          - os: macos-latest
+          - os: macos-12
 
     steps:
       - uses: actions/checkout@v4
@@ -50,20 +50,21 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
 
       - name: Build for macos
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'macos-12'
         run: |
           cargo install cargo-bundle
           cargo bundle --release --format osx
-          zip -r Hed.app.zip ./target/release/bundle/osx/Hed.app
+          cd ./target/release/bundle/osx
+          zip -r Hed.app.zip Hed.app
 
       - name: Upload for macos
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'macos-12'
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ./Hed.app.zip
+          asset_path: ./target/release/bundle/osx/Hed.app.zip
           asset_name: Hed.app.zip
           asset_content_type: application/zip
 
