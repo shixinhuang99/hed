@@ -1,1 +1,3 @@
-hosts file editor
+# Hed
+
+A simple hosts file editor

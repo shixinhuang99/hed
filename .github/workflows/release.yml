@@ -1,0 +1,69 @@
+name: Release
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - "[0-9]+.*"
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/create-gh-release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  upload-assets:
+    needs: create-release
+    runs-on: ${{ matrix.os }}
+    name: upload-assets (${{ matrix.os }})
+
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+          - os: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-bundle
+        if: matrix.os == 'macos-latest'
+        run: cargo install cargo-bundle
+
+      - name: Build for ${{ matrix.os }}
+        run: |
+          if [ "${{ matrix.os }}" == "macos-latest" ]; then
+            cargo bundle --release --target x86_64-apple-darwin --format osx
+          else
+            cargo build --release --target x86_64-pc-windows-msvc
+          fi
+
+      - name: Upload for macos
+        if: matrix.os == 'macos-latest'
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./target/release/bundle/osx/Hed.app
+          asset_name: Hed.app
+          asset_content_type: application/octet-stream
+
+      - name: Upload for windows
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./target/release/Hed.exe
+          asset_name: Hed.exe
+          asset_content_type: application/octet-stream
