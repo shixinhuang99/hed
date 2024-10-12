@@ -38,17 +38,15 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
-      - name: Install cargo-bundle
+      - name: Build for macos
         if: matrix.os == 'macos-latest'
-        run: cargo install cargo-bundle
-
-      - name: Build for ${{ matrix.os }}
         run: |
-          if [ "${{ matrix.os }}" == "macos-latest" ]; then
-            cargo bundle --release --target x86_64-apple-darwin --format osx
-          else
-            cargo build --release --target x86_64-pc-windows-msvc
-          fi
+          cargo install cargo-bundle
+          cargo bundle --release --target x86_64-apple-darwin --format osx
+
+      - name: Build for windows
+        if: matrix.os == 'windows-latest'
+        run: cargo build --release --target x86_64-pc-windows-msvc
 
       - name: Upload for macos
         if: matrix.os == 'macos-latest'
