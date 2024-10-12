@@ -13,17 +13,28 @@ env:
   CARGO_INCREMENTAL: 0
 
 jobs:
-  create-release:
+  create_release:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
-      - uses: taiki-e/create-gh-release-action@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
-  upload-assets:
-    needs: create-release
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+
+  upload_assets:
+    needs: create_release
     runs-on: ${{ matrix.os }}
     name: upload-assets (${{ matrix.os }})
 
@@ -51,8 +62,10 @@ jobs:
       - name: Upload for macos
         if: matrix.os == 'macos-latest'
         uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ github.event.release.upload_url }}
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
           asset_path: ./target/release/bundle/osx/Hed.app
           asset_name: Hed.app
           asset_content_type: application/octet-stream
@@ -60,8 +73,10 @@ jobs:
       - name: Upload for windows
         if: matrix.os == 'windows-latest'
         uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ github.event.release.upload_url }}
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
           asset_path: ./target/release/Hed.exe
           asset_name: Hed.exe
           asset_content_type: application/octet-stream
