@@ -30,6 +30,9 @@ indexmap = "2.5.0"
 insta = "1.39.0"
 rstest = "0.22.0"
 
+[build-dependencies]
+winresource = "0.1.17"
+
 [features]
 _dev = []
 
