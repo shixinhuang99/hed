@@ -1,3 +1,5 @@
+Deprecated, see [hed2](https://github.com/shixinhuang99/hed2)
+
 # Hed
 
 A simple hosts file editor
